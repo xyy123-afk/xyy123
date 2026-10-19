@@ -1,0 +1,17 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# 临时/打包文件
+*.rar
+*.zip
+*.log
+
+# 系统
+Thumbs.db
+.DS_Store
+
+# 前端
+node_modules/
+dist/
