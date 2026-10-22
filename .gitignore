@@ -1,43 +1,19 @@
-# ===================== IntelliJ IDEA =====================
+# IntelliJ IDEA
 .idea/
 *.iml
 *.iws
 *.ipr
 
-# ===================== Java / Maven (springBootTest) =====================
-target/
-*.class
-*.jar
-*.war
-*.ear
+# 内嵌仓库改名后的备份目录，不入库
+.git_bak/
 
-# 本地打包/运行日志
-build.log
-log/
-*.log
-*.log.*
+# 改造前的旧版本备份（含 SQL dump 和嵌套仓库），不入库
+_backup_before_blog_20261019/
 
-# 自带的 Maven 发行包（二进制，体积大，不入库；构建请用系统 Maven 或 mvnw 自动下载）
-springBootTest/tools/
-
-# ===================== Node / Vue (fanren-login-vue) =====================
-node_modules/
-dist/
-dist-ssr/
-.vite/
-*.local
-
-# 环境变量文件（按规范不入库；如需示例请保留 .env.example）
-.env
-.env.*
-!.env.example
-
-# ===================== 操作系统 / 编辑器 =====================
-.DS_Store
-Thumbs.db
-*.swp
-*~
-
-# ===================== 打包/压缩临时产物 =====================
+# 压缩包 / 日志 / 系统文件
+*.rar
 *.zip
-*.tar.gz
+*.gz
+*.log
+Thumbs.db
+.DS_Store

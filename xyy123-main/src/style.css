@@ -1,0 +1,358 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* 整站统一深色：滚动条、原生表单控件都按深色渲染 */
+  color-scheme: dark;
+}
+
+/*
+ * 全站统一深色调色板（前台 style-blog.css 和后台 style-admin.css 共用）：
+ * 一个近黑底（--tb-bg），往上叠三层亮一个档次的表面：
+ *   card       卡片本体
+ *   surface-2  悬停 / 抬起来的一层
+ *   surface-3  往下凹的容器：输入框、代码块周边
+ * 靠明度做纵深，基本不需要到处加描边。想整站调明暗，只改这一处。
+ */
+:root {
+  --tb-bg: #0d1016;
+  --tb-card: #161a22;
+  --tb-surface-2: #1d222c;
+  --tb-surface-3: #12161d;
+  --tb-code-bg: #0a0d12;
+  --tb-text: #e7eaf0;
+  --tb-text-2: #a8b0bf;
+  --tb-muted: #7b8497;
+  --tb-line: #262c38;
+  --tb-line-soft: #1e232d;
+  --tb-line-strong: #3a4254;
+  --tb-blue: #5b8cff;
+  /* 深色底上悬停要往亮里走，所以这个名字实际是"更亮的一档" */
+  --tb-blue-dark: #7ba4ff;
+  --tb-blue-soft: rgba(91, 140, 255, 0.14);
+  --tb-header-bg: rgba(13, 16, 22, 0.82);
+  --tb-radius: 10px;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  font-family: "PingFang SC", "Yuanti SC", "YouYuan", "幼圆", "Segoe UI", "Microsoft YaHei", sans-serif;
+  background-color: var(--tb-bg);
+  /* 顶部两抹冷光：整页不至于死黑，滚动时也不跟着跑（fixed） */
+  background-image:
+    radial-gradient(900px 480px at 50% -12%, rgba(91, 140, 255, 0.16), transparent 70%),
+    radial-gradient(720px 420px at 100% 0%, rgba(122, 92, 255, 0.1), transparent 70%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: var(--tb-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 选中文字：深色底上别用系统默认的白底黑字 */
+::selection {
+  background: rgba(91, 140, 255, 0.32);
+  color: #fff;
+}
+
+/*
+ * 站点现在只有一套深色视觉，data-section 仍保留用来切布局和专属样式：
+ *   public —— 博客前台（style-blog.css）
+ *   admin  —— 登录页与写作后台（style-admin.css）
+ * 底色、文字色、强调色都来自上面的 :root，两个区段不会各长各的样。
+ */
+body[data-section="admin"] {
+  padding: 20px;
+}
+
+/* 登录页需要一个居中的舞台；后台布局自己撑满，不套这个类 */
+.login-page {
+  min-height: calc(100vh - 40px);
+  min-height: calc(100dvh - 40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- 登录卡片：深色毛玻璃 ---------- */
+
+.login-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 380px;
+  background: rgba(22, 26, 34, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  padding: 38px 32px 30px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7ba4ff, #5b8cff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(91, 140, 255, 0.35);
+}
+
+.login-card h1 {
+  font-size: 22px;
+  color: var(--tb-text);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--tb-muted);
+  margin-bottom: 26px;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--tb-surface-3);
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0 12px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.field:focus-within {
+  border-color: var(--tb-blue);
+  background: var(--tb-surface-2);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+}
+
+.field input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 9px 4px;
+  font-size: 14px;
+  color: var(--tb-text);
+}
+
+.field input::placeholder {
+  color: var(--tb-muted);
+}
+
+/* 浏览器自动填充的默认底色会盖掉深色输入框，用内阴影把背景“刷”回来 */
+.field input:-webkit-autofill,
+.field input:-webkit-autofill:hover,
+.field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--tb-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--tb-surface-3) inset;
+  caret-color: var(--tb-text);
+  transition: background-color 9999s ease-out 0s;
+}
+
+.toggle {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border-radius: 6px;
+  color: var(--tb-muted);
+  transition: color 0.2s;
+}
+
+.toggle:hover,
+.field:focus-within .toggle {
+  color: var(--tb-blue);
+}
+
+/* 键盘 Tab 导航时给出清晰焦点环，鼠标点击则保持干净 */
+.toggle:focus-visible,
+.submit:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--tb-blue);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  margin: 4px 2px 18px;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--tb-text-2);
+  cursor: pointer;
+}
+
+.remember input {
+  accent-color: var(--tb-blue);
+}
+
+.link {
+  color: var(--tb-blue);
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.submit {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #fff;
+  background: linear-gradient(135deg, #7ba4ff, #5b8cff);
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 10px 24px rgba(91, 140, 255, 0.35);
+}
+
+.submit:hover {
+  box-shadow: 0 14px 30px rgba(91, 140, 255, 0.45);
+}
+
+.submit:active {
+  transform: translateY(1px);
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.msg {
+  min-height: 18px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.msg.error {
+  color: #ff6b6b;
+}
+
+.msg.success {
+  color: #3ddc97;
+}
+
+.footer {
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--tb-muted);
+}
+
+/* 登录/注册切换链接：跟页面的蓝色系保持一致 */
+.footer a {
+  color: var(--tb-blue);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(91, 140, 255, 0.5);
+}
+
+.footer a:hover {
+  border-bottom-style: solid;
+}
+
+/* ---- 登录页体验优化 ---- */
+
+.field.invalid {
+  border-color: #ff6b6b;
+  background: rgba(229, 72, 77, 0.1);
+}
+.field.invalid .icon {
+  color: #ff6b6b;
+}
+.field .icon {
+  color: var(--tb-muted);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.field.shake {
+  animation: shake 0.35s ease;
+}
+
+.caps-tip {
+  font-size: 12px;
+  color: #f0ad4e;
+  background: rgba(240, 173, 78, 0.12);
+  border-radius: 8px;
+  padding: 4px 10px;
+  margin: -6px 0 10px;
+  text-align: left;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: -2px;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(18px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card-enter {
+  animation: card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (max-width: 640px) {
+  body[data-section="admin"] {
+    background-attachment: scroll;
+  }
+
+  /* 字号小于 16px 时 iOS Safari 聚焦输入框会自动放大页面 */
+  .field input {
+    font-size: 16px;
+  }
+}
+
+/* 尊重系统「减弱动态效果」设置：关掉粒子动画与入场动画，降低眩晕和电量消耗 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

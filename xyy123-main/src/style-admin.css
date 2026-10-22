@@ -1,0 +1,563 @@
+/*
+ * 写作后台样式（只在 <body data-section="admin"> 下使用）。
+ * 和前台共用 style.css :root 里的深色调色板，视觉上是一套：
+ * 半透明深色毛玻璃卡片 + 蓝色系强调色，布局仍是「左侧导航 + 右侧内容」。
+ */
+
+.admin-shell {
+  position: relative;
+  /* 压在粒子层（z-index: 0）之上 */
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 208px minmax(0, 1fr);
+  gap: 20px;
+  max-width: 1180px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+/* ---------- 侧边导航 ---------- */
+
+.admin-sidebar {
+  position: sticky;
+  top: 20px;
+  background: rgba(22, 26, 34, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 22px 16px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+
+.admin-brand {
+  display: block;
+  padding: 0 8px 16px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--tb-line-soft);
+}
+
+.admin-brand strong {
+  display: block;
+  font-size: 16px;
+  color: var(--tb-text);
+  letter-spacing: 0.02em;
+}
+
+.admin-brand span {
+  font-size: 11.5px;
+  color: var(--tb-muted);
+}
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-nav a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  font-size: 13.5px;
+  color: var(--tb-text-2);
+  text-decoration: none;
+  border-radius: 10px;
+  transition: background 0.18s, color 0.18s;
+}
+
+.admin-nav a:hover {
+  background: var(--tb-surface-2);
+  color: var(--tb-blue);
+}
+
+/* 侧栏「私信」的未读红点 */
+.admin-nav-dot {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  color: #fff;
+  background: #f5222d;
+  border-radius: 999px;
+}
+
+.admin-nav a.active {
+  background: linear-gradient(135deg, #7ba4ff, #5b8cff);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(91, 140, 255, 0.32);
+}
+
+.admin-sidebar-foot {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--tb-line-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.admin-sidebar-foot a,
+.admin-sidebar-foot button {
+  color: var(--tb-muted);
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0;
+  font-size: 12.5px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.admin-sidebar-foot a:hover,
+.admin-sidebar-foot button:hover {
+  color: var(--tb-blue);
+}
+
+/* 「已登录：xxx」这行小字 */
+.admin-logged {
+  color: var(--tb-muted);
+}
+
+/* ---------- 内容区 ---------- */
+
+.admin-main {
+  background: rgba(22, 26, 34, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 26px 28px 30px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  min-height: 60vh;
+}
+
+.admin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.admin-head h1 {
+  font-size: 20px;
+  color: var(--tb-text);
+}
+
+.admin-head p {
+  font-size: 12.5px;
+  color: var(--tb-muted);
+  margin-top: 4px;
+}
+
+/* ---------- 按钮 ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-family: inherit;
+  border-radius: 999px;
+  border: 1px solid var(--tb-line-strong);
+  background: var(--tb-surface-2);
+  color: var(--tb-text-2);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, opacity 0.18s;
+  white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--tb-blue);
+  color: var(--tb-blue);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(135deg, #7ba4ff, #5b8cff);
+  box-shadow: 0 8px 18px rgba(91, 140, 255, 0.32);
+}
+
+.btn-primary:hover:not(:disabled) {
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(91, 140, 255, 0.42);
+}
+
+.btn-danger {
+  border-color: rgba(229, 72, 77, 0.4);
+  color: #ff6b6b;
+}
+
+.btn-danger:hover:not(:disabled) {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+  background: rgba(229, 72, 77, 0.1);
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+/* ---------- 表格 ---------- */
+
+.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.adm-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--tb-muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--tb-line);
+  white-space: nowrap;
+}
+
+.adm-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--tb-line-soft);
+  color: var(--tb-text);
+  vertical-align: middle;
+}
+
+.adm-table tr:hover td {
+  background: rgba(91, 140, 255, 0.06);
+}
+
+.adm-table .cell-title {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.adm-empty {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--tb-muted);
+  font-size: 13.5px;
+}
+
+/* ---------- 状态标记 ---------- */
+
+.pill {
+  display: inline-block;
+  padding: 1px 9px;
+  font-size: 11.5px;
+  border-radius: 999px;
+  background: var(--tb-surface-2);
+  color: var(--tb-text-2);
+  white-space: nowrap;
+}
+
+.pill-published {
+  background: rgba(61, 220, 151, 0.12);
+  color: #3ddc97;
+}
+
+.pill-draft {
+  background: rgba(240, 173, 78, 0.12);
+  color: #f0ad4e;
+}
+
+.pill-top {
+  background: var(--tb-blue-soft);
+  color: var(--tb-blue-dark);
+}
+
+/* ---------- 表单 ---------- */
+
+.adm-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.adm-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.adm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.adm-field > label {
+  font-size: 12.5px;
+  color: var(--tb-muted);
+}
+
+.adm-input,
+.adm-textarea,
+.adm-select {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--tb-text);
+  background: var(--tb-surface-3);
+  border: 1px solid var(--tb-line);
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.adm-input:focus,
+.adm-textarea:focus,
+.adm-select:focus {
+  border-color: var(--tb-blue);
+  background: var(--tb-surface-2);
+}
+
+.adm-textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+
+/* ---------- 编辑器：左写右预览 ---------- */
+
+.editor-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.editor-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.editor-pane > label {
+  font-size: 12.5px;
+  color: var(--tb-muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.editor-md {
+  width: 100%;
+  min-height: 460px;
+  padding: 14px 16px;
+  font-family: "JetBrains Mono", Consolas, "Courier New", monospace;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--tb-text);
+  background: var(--tb-surface-3);
+  border: 1px solid var(--tb-line);
+  border-radius: 12px;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.editor-md:focus {
+  border-color: var(--tb-blue);
+  background: var(--tb-surface-2);
+}
+
+.editor-preview {
+  min-height: 460px;
+  max-height: 720px;
+  overflow: auto;
+  padding: 14px 18px;
+  background: var(--tb-card);
+  border: 1px solid var(--tb-line);
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--tb-text);
+}
+
+/* 预览区复用文章正文的排版规则，配色走同一套深色变量 */
+.editor-preview h1,
+.editor-preview h2,
+.editor-preview h3 {
+  margin: 18px 0 8px;
+  line-height: 1.4;
+}
+
+.editor-preview h1 { font-size: 22px; }
+.editor-preview h2 { font-size: 19px; }
+.editor-preview h3 { font-size: 16px; }
+
+.editor-preview p,
+.editor-preview ul,
+.editor-preview ol,
+.editor-preview blockquote,
+.editor-preview pre,
+.editor-preview table {
+  margin: 10px 0;
+}
+
+.editor-preview ul,
+.editor-preview ol {
+  padding-left: 1.4em;
+}
+
+.editor-preview blockquote {
+  padding: 6px 14px;
+  border-left: 3px solid var(--tb-line-strong);
+  background: var(--tb-surface-3);
+  color: var(--tb-text-2);
+}
+
+.editor-preview code {
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 0.88em;
+  padding: 1px 5px;
+  background: var(--tb-surface-2);
+  border-radius: 4px;
+  color: #ff8fa3;
+}
+
+.editor-preview pre {
+  padding: 14px 16px;
+  overflow-x: auto;
+  background: var(--tb-code-bg);
+  border-radius: 10px;
+}
+
+.editor-preview pre code {
+  padding: 0;
+  background: transparent;
+  color: var(--tb-text);
+}
+
+.editor-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.editor-preview th,
+.editor-preview td {
+  border: 1px solid var(--tb-line);
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.editor-preview img {
+  max-width: 100%;
+}
+
+.editor-preview a {
+  color: var(--tb-blue);
+}
+
+/* ---------- 统计卡 ---------- */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.stat-card {
+  padding: 18px 20px;
+  background: var(--tb-surface-2);
+  border: 1px solid var(--tb-line-soft);
+  border-radius: 14px;
+}
+
+.stat-card .label {
+  font-size: 12px;
+  color: var(--tb-muted);
+}
+
+.stat-card .value {
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--tb-text);
+  margin-top: 4px;
+  line-height: 1.2;
+}
+
+/* ---------- 提示条 ---------- */
+
+.adm-hint {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: #3ddc97;
+}
+
+.adm-hint.is-error {
+  color: #ff6b6b;
+}
+
+.adm-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.adm-toolbar .adm-input,
+.adm-toolbar .adm-select {
+  width: auto;
+  min-width: 140px;
+}
+
+/* ---------- 响应式 ---------- */
+
+@media (max-width: 860px) {
+  .admin-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-sidebar {
+    position: static;
+  }
+
+  .admin-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .admin-main {
+    padding: 20px 18px 24px;
+  }
+
+  .editor-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .editor-md,
+  .editor-preview {
+    min-height: 300px;
+  }
+}
