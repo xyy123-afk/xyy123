@@ -192,6 +192,34 @@ PREPARE stmt_del FROM @sql_del;
 EXECUTE stmt_del;
 DEALLOCATE PREPARE stmt_del;
 
+-- 老库升级：补消息类型（text 纯文本 / sticker 表情包图片消息）。
+-- 表情包本质就是一条内容为图片 URL 的消息，前端按 type 决定渲染文本还是 <img>。
+SET @exist_type := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = 'xyy_login' AND TABLE_NAME = 'messages' AND COLUMN_NAME = 'type'
+);
+SET @sql_type := IF(@exist_type = 0,
+  'ALTER TABLE messages ADD COLUMN type VARCHAR(16) NOT NULL DEFAULT ''text'' COMMENT ''text 纯文本 / sticker 表情包'' AFTER content',
+  'SELECT 1');
+PREPARE stmt_type FROM @sql_type;
+EXECUTE stmt_type;
+DEALLOCATE PREPARE stmt_type;
+
+-- ---------- 7.4 表情包收藏 ----------
+-- 用户自己上传收藏的表情包。消息里的贴纸引用这里的 url，删收藏不影响已发送的历史消息。
+CREATE TABLE IF NOT EXISTS stickers (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
+  user_id     BIGINT UNSIGNED NOT NULL                COMMENT '收藏者账号 id，逻辑关联 users.id',
+  url         VARCHAR(255)     NOT NULL               COMMENT '图片地址（本站 /uploads/ 下的相对路径）',
+  name        VARCHAR(64)      NULL                   COMMENT '备注名，hover 提示用，可为空',
+  created_at  DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (id),
+  KEY idx_sticker_user (user_id, id)                  COMMENT '按用户取收藏列表'
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT = '表情包收藏表';
+
 -- ---------- 8. 清理旧业务表（Todo 已下线，全库已备份） ----------
 DROP TABLE IF EXISTS todos;
 

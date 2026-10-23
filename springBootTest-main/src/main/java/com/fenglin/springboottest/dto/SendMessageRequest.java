@@ -10,6 +10,8 @@ package com.fenglin.springboottest.dto;
 public record SendMessageRequest(
         Long conversationId,
         Long toUserId,
-        String content
+        String content,
+        /** 消息类型：text 纯文本（默认）/ sticker 表情包（content 为图片 URL）。空按 text 处理 */
+        String type
 ) {
 }

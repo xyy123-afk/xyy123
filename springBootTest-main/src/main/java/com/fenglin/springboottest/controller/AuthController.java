@@ -3,6 +3,7 @@ package com.fenglin.springboottest.controller;
 import com.fenglin.springboottest.common.ApiResponse;
 import com.fenglin.springboottest.common.TokenBlacklist;
 import com.fenglin.springboottest.dto.AuthRequest;
+import com.fenglin.springboottest.dto.AvatarUpdateRequest;
 import com.fenglin.springboottest.dto.ChangePasswordRequest;
 import com.fenglin.springboottest.dto.UserProfileVO;
 import com.fenglin.springboottest.dto.UserVO;
@@ -113,6 +114,33 @@ public class AuthController {
         if (user == null) {
             return ApiResponse.fail("登录已过期，请重新登录", "");
         }
+        return ApiResponse.ok(new UserProfileVO(user.getId(), user.getUsername(),
+                user.getNickname(), user.getAvatar(), user.getCreatedAt()));
+    }
+
+    /**
+     * 更新我的头像：{ avatar: "/uploads/..." }，空串表示清除头像。
+     * 只接受本站上传的相对路径，防止存外链钓鱼图。
+     * 返回最新资料，前端直接就地刷新，不用再拉一次 /me。
+     */
+    @PostMapping("/avatar")
+    public ApiResponse<UserProfileVO> updateAvatar(@RequestBody AvatarUpdateRequest req,
+                                                   @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+        String token = extractToken(authorization);
+        String username = token != null ? jwtUtil.parseUsername(token) : null;
+        if (username == null) {
+            return ApiResponse.fail("登录已过期，请重新登录", "");
+        }
+        String avatar = req == null || req.avatar() == null ? "" : req.avatar().trim();
+        if (!avatar.isEmpty() && !avatar.startsWith("/uploads/")) {
+            return ApiResponse.fail("头像地址不合法", "");
+        }
+        User user = userMapper.selectByUsername(username);
+        if (user == null) {
+            return ApiResponse.fail("登录已过期，请重新登录", "");
+        }
+        user.setAvatar(avatar.isEmpty() ? null : avatar);
+        userMapper.updateById(user);
         return ApiResponse.ok(new UserProfileVO(user.getId(), user.getUsername(),
                 user.getNickname(), user.getAvatar(), user.getCreatedAt()));
     }

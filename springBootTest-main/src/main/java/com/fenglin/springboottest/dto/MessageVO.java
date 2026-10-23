@@ -16,6 +16,8 @@ public record MessageVO(
         boolean mine,
         boolean read,
         /** 已撤回：content 会是空串，前端显示「消息已撤回」 */
-        boolean deleted
+        boolean deleted,
+        /** text 纯文本 / sticker 表情包（content 为图片 URL），前端据此决定渲染气泡还是图片 */
+        String type
 ) {
 }

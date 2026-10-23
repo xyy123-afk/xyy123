@@ -28,6 +28,10 @@ public class Message {
     @TableField("content")
     private String content;
 
+    /** text 纯文本（默认）/ sticker 表情包（content 为图片 URL） */
+    @TableField("type")
+    private String type;
+
     @TableField("is_read")
     private Integer isRead;
 
@@ -68,6 +72,14 @@ public class Message {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public Integer getIsRead() {

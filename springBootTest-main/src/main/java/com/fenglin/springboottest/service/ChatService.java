@@ -4,12 +4,15 @@ import com.fenglin.springboottest.dto.ChatUserVO;
 import com.fenglin.springboottest.dto.ConversationVO;
 import com.fenglin.springboottest.dto.MessageVO;
 import com.fenglin.springboottest.dto.SendMessageRequest;
+import com.fenglin.springboottest.dto.StickerAddRequest;
 import com.fenglin.springboottest.dto.WsEnvelope;
 import com.fenglin.springboottest.entity.Conversation;
 import com.fenglin.springboottest.entity.Message;
+import com.fenglin.springboottest.entity.Sticker;
 import com.fenglin.springboottest.entity.User;
 import com.fenglin.springboottest.mapper.ConversationMapper;
 import com.fenglin.springboottest.mapper.MessageMapper;
+import com.fenglin.springboottest.mapper.StickerMapper;
 import com.fenglin.springboottest.mapper.UserMapper;
 import com.fenglin.springboottest.ws.ChatWebSocketHandler;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,17 +45,20 @@ public class ChatService {
     private final ConversationMapper conversationMapper;
     private final MessageMapper messageMapper;
     private final UserMapper userMapper;
+    private final StickerMapper stickerMapper;
     private final ChatWebSocketHandler wsHandler;
     private final String ownerUsername;
 
     public ChatService(ConversationMapper conversationMapper,
                        MessageMapper messageMapper,
                        UserMapper userMapper,
+                       StickerMapper stickerMapper,
                        ChatWebSocketHandler wsHandler,
                        @Value("${blog.owner-username:demo001}") String ownerUsername) {
         this.conversationMapper = conversationMapper;
         this.messageMapper = messageMapper;
         this.userMapper = userMapper;
+        this.stickerMapper = stickerMapper;
         this.wsHandler = wsHandler;
         this.ownerUsername = ownerUsername;
     }
@@ -126,6 +132,15 @@ public class ChatService {
             throw new IllegalArgumentException("单条消息最多 1000 个字");
         }
 
+        // 消息类型：缺省按纯文本；表情包只允许本站上传的图片（防外链钓鱼图）
+        String type = req.type() == null || req.type().isBlank() ? "text" : req.type().trim();
+        if (!"text".equals(type) && !"sticker".equals(type)) {
+            throw new IllegalArgumentException("不支持的消息类型");
+        }
+        if ("sticker".equals(type) && !content.startsWith("/uploads/")) {
+            throw new IllegalArgumentException("表情包必须是本站上传的图片");
+        }
+
         Conversation conv;
         if (req.conversationId() != null) {
             conv = requireMine(meId, req.conversationId());
@@ -146,25 +161,66 @@ public class ChatService {
         m.setConversationId(conv.getId());
         m.setSenderId(meId);
         m.setContent(content);
+        m.setType(type);
         m.setIsRead(0);
         m.setCreatedAt(LocalDateTime.now());
         messageMapper.insert(m);
 
         // 未读只加给对方；我这边 +0
+        // 表情包的会话预览不能塞图片 URL，统一显示 [表情包]
         boolean iAmA = meId.equals(conv.getUserAId());
-        conversationMapper.bumpOnMessage(conv.getId(), preview(content), m.getCreatedAt(),
+        conversationMapper.bumpOnMessage(conv.getId(),
+                "sticker".equals(type) ? "[表情包]" : preview(content), m.getCreatedAt(),
                 iAmA ? 0 : 1, iAmA ? 1 : 0);
 
         MessageVO mine = new MessageVO(m.getId(), conv.getId(), meId, displayName(userMapper.selectById(meId)),
-                m.getContent(), m.getCreatedAt(), true, false, false);
+                m.getContent(), m.getCreatedAt(), true, false, false, type);
         Long peerId = iAmA ? conv.getUserBId() : conv.getUserAId();
         MessageVO theirs = new MessageVO(m.getId(), conv.getId(), meId, mine.senderName(),
-                m.getContent(), m.getCreatedAt(), false, false, false);
+                m.getContent(), m.getCreatedAt(), false, false, false, type);
 
         // 自己开的其它标签页也要收到（多端同步），所以给两边都推
         wsHandler.pushToUser(meId, WsEnvelope.message(mine));
         wsHandler.pushToUser(peerId, WsEnvelope.message(theirs));
         return mine;
+    }
+
+    /**
+     * 我收藏的表情包列表（按收藏时间倒序，新收的排前面）。
+     * 直接返回 Sticker 实体也行——字段本来就是要给前端的，不用再套一层 VO。
+     */
+    public List<Sticker> listStickers(Long meId) {
+        return stickerMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Sticker>()
+                .eq(Sticker::getUserId, meId)
+                .orderByDesc(Sticker::getId));
+    }
+
+    /** 收藏一个表情包：url 必须是本站 /uploads/ 下的图片，防外链钓鱼图 */
+    @Transactional
+    public Sticker addSticker(Long meId, StickerAddRequest req) {
+        String url = req == null || req.url() == null ? "" : req.url().trim();
+        if (url.isEmpty() || !url.startsWith("/uploads/")) {
+            throw new IllegalArgumentException("表情包地址不合法，请先上传图片");
+        }
+        String name = req.name() == null ? "" : req.name().trim();
+        if (name.length() > 64) {
+            name = name.substring(0, 64);
+        }
+        Sticker s = new Sticker();
+        s.setUserId(meId);
+        s.setUrl(url);
+        s.setName(name.isEmpty() ? null : name);
+        stickerMapper.insert(s);
+        return s;
+    }
+
+    /** 删除自己收藏的一个表情包（只能删自己的，历史消息里的贴纸不受影响） */
+    public void deleteSticker(Long meId, Long id) {
+        Sticker s = stickerMapper.selectById(id);
+        if (s == null || !meId.equals(s.getUserId())) {
+            throw new IllegalArgumentException("表情包不存在");
+        }
+        stickerMapper.deleteById(id);
     }
 
     /**
@@ -195,7 +251,8 @@ public class ChatService {
 
         // 撤回的可能正是列表里显示的那条，预览要重算，否则会话列表还挂着旧内容
         Message latest = messageMapper.selectLatestUndeleted(conv.getId());
-        conversationMapper.updatePreview(conv.getId(), latest == null ? "消息已撤回" : preview(latest.getContent()));
+        conversationMapper.updatePreview(conv.getId(), latest == null ? "消息已撤回"
+                : "sticker".equals(latest.getType()) ? "[表情包]" : preview(latest.getContent()));
 
         // 双方都要知道，否则对方界面还留着原文
         wsHandler.pushToUser(conv.getUserAId(),
@@ -268,11 +325,12 @@ public class ChatService {
     private MessageVO toVO(Message m, Long meId) {
         User sender = userMapper.selectById(m.getSenderId());
         boolean deleted = nz(m.getDeleted()) == 1;
+        String type = m.getType() == null ? "text" : m.getType();
         return new MessageVO(m.getId(), m.getConversationId(), m.getSenderId(),
                 sender == null ? "已注销用户" : displayName(sender),
                 // 撤回后原文不再下发，前端按 deleted 显示占位文案
                 deleted ? "" : m.getContent(), m.getCreatedAt(),
-                meId.equals(m.getSenderId()), m.getIsRead() != null && m.getIsRead() == 1, deleted);
+                meId.equals(m.getSenderId()), m.getIsRead() != null && m.getIsRead() == 1, deleted, type);
     }
 
     private String preview(String content) {

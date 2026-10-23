@@ -5,7 +5,9 @@ import com.fenglin.springboottest.dto.ChatUserVO;
 import com.fenglin.springboottest.dto.ConversationVO;
 import com.fenglin.springboottest.dto.MessageVO;
 import com.fenglin.springboottest.dto.SendMessageRequest;
+import com.fenglin.springboottest.dto.StickerAddRequest;
 import com.fenglin.springboottest.entity.Conversation;
+import com.fenglin.springboottest.entity.Sticker;
 import com.fenglin.springboottest.interceptor.LoginInterceptor;
 import com.fenglin.springboottest.service.ChatService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -107,6 +109,27 @@ public class ChatController {
     @GetMapping("/unread")
     public ApiResponse<Map<String, Integer>> unread(HttpServletRequest request) {
         return ApiResponse.ok(Map.of("total", chatService.totalUnread(currentUserId(request))));
+    }
+
+    /** 我收藏的表情包列表 */
+    @GetMapping("/stickers")
+    public ApiResponse<List<Sticker>> stickers(HttpServletRequest request) {
+        return ApiResponse.ok(chatService.listStickers(currentUserId(request)));
+    }
+
+    /** 收藏表情包：{ url, name }，url 是 /api/upload 返回的地址 */
+    @PostMapping("/stickers")
+    public ApiResponse<Sticker> stickerAdd(HttpServletRequest request, @RequestBody StickerAddRequest req) {
+        return okOrFail(() -> chatService.addSticker(currentUserId(request), req));
+    }
+
+    /** 删除自己收藏的一个表情包 */
+    @DeleteMapping("/stickers/{id}")
+    public ApiResponse<Void> stickerDelete(HttpServletRequest request, @PathVariable Long id) {
+        return okOrFail(() -> {
+            chatService.deleteSticker(currentUserId(request), id);
+            return null;
+        });
     }
 
     private Long currentUserId(HttpServletRequest request) {

@@ -16,7 +16,7 @@ public interface MessageMapper extends BaseMapper<Message> {
      * 会话里的历史消息，正序（旧 → 新）。
      * 聊天室一次只取最近 N 条，够用就行，不做无限滚动。
      */
-    @Select("select id, conversation_id, sender_id, content, is_read, deleted, created_at from messages " +
+    @Select("select id, conversation_id, sender_id, content, type, is_read, deleted, created_at from messages " +
             "where conversation_id = #{conversationId} order by id desc limit #{limit}")
     List<Message> selectRecent(@Param("conversationId") Long conversationId, @Param("limit") long limit);
 
@@ -24,14 +24,14 @@ public interface MessageMapper extends BaseMapper<Message> {
      * 往上翻历史：取比 beforeId 更早的 N 条（聊天窗滚到顶部时用）。
      * 依然是 id desc 取，调用方自己翻转成正序。
      */
-    @Select("select id, conversation_id, sender_id, content, is_read, deleted, created_at from messages " +
+    @Select("select id, conversation_id, sender_id, content, type, is_read, deleted, created_at from messages " +
             "where conversation_id = #{conversationId} and id < #{beforeId} order by id desc limit #{limit}")
     List<Message> selectBefore(@Param("conversationId") Long conversationId,
                                @Param("beforeId") Long beforeId,
                                @Param("limit") long limit);
 
     /** 比某条 id 更新的消息，用于前端断线重连后补齐 */
-    @Select("select id, conversation_id, sender_id, content, is_read, deleted, created_at from messages " +
+    @Select("select id, conversation_id, sender_id, content, type, is_read, deleted, created_at from messages " +
             "where conversation_id = #{conversationId} and id > #{afterId} order by id asc")
     List<Message> selectAfter(@Param("conversationId") Long conversationId, @Param("afterId") Long afterId);
 
@@ -47,7 +47,7 @@ public interface MessageMapper extends BaseMapper<Message> {
     int markDeleted(@Param("id") Long id);
 
     /** 撤回后重算会话预览：取这条会话里最新的一条未撤回消息 */
-    @Select("select id, conversation_id, sender_id, content, is_read, deleted, created_at from messages " +
+    @Select("select id, conversation_id, sender_id, content, type, is_read, deleted, created_at from messages " +
             "where conversation_id = #{conversationId} and deleted = 0 order by id desc limit 1")
     Message selectLatestUndeleted(@Param("conversationId") Long conversationId);
 }
