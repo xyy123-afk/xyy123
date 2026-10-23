@@ -1,0 +1,21 @@
+package com.fenglin.springboottest.dto;
+
+import java.time.LocalDateTime;
+
+/**
+ * 一条聊天消息。mine 由后端按当前登录人算好，前端直接决定气泡靠左还是靠右，
+ * 省得每个页面都拿 senderId 比一遍。
+ */
+public record MessageVO(
+        Long id,
+        Long conversationId,
+        Long senderId,
+        String senderName,
+        String content,
+        LocalDateTime createdAt,
+        boolean mine,
+        boolean read,
+        /** 已撤回：content 会是空串，前端显示「消息已撤回」 */
+        boolean deleted
+) {
+}
