@@ -88,6 +88,10 @@ const stickers = ref([])
 const stickerUploading = ref(false)
 const stickerInput = ref(null)
 
+// 直接发图：选文件 → 上传 → 作为 sticker 消息立即发出（不进收藏夹）
+const imageInput = ref(null)
+const sendingImage = ref(false)
+
 // 内置 Emoji：常用的一批，点击追加到输入框
 const EMOJIS = [
   '😀', '😂', '🤣', '😊', '😍', '😘', '😎', '🤔', '😴', '🥺',
