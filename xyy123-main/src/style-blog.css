@@ -219,6 +219,17 @@ body[data-section="public"] a {
   border-color: var(--tb-blue);
 }
 
+/* 后台管理入口：用站点已有的琥珀色做出区分，一眼能认出是管理通道 */
+.tb-pill-admin {
+  color: #d48806;
+  background: rgba(250, 173, 20, 0.10);
+  border-color: rgba(250, 173, 20, 0.45);
+}
+.tb-pill-admin:hover {
+  color: #faad14;
+  border-color: #faad14;
+}
+
 .tb-pill-outline {
   color: #fff;
   background: rgba(255, 255, 255, 0.06);

@@ -64,11 +64,11 @@ async function send(method, path, body, params) {
     return { code: 1, msg: `服务器异常（HTTP ${res.status}）` }
   }
   const data = await res.json()
-  // 后台接口的登录失效统一在这里兜底：清凭证 + 回登录页，页面不用各自处理
+  // 后台接口的登录失效统一在这里兜底：清凭证 + 回后台登录页（仅登录、无注册），页面不用各自处理
   if (data && data.code !== 0 && isAuthError(data)) {
     clearToken()
     if (location.pathname.startsWith('/admin')) {
-      location.href = '/login'
+      location.href = '/admin/login'
     }
   }
   return data

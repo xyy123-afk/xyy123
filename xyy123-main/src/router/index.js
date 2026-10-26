@@ -27,6 +27,9 @@ const router = createRouter({
     // ===== 登录 =====
     { path: '/login', name: 'login', component: () => import('../views/LoginView.vue') },
 
+    // ===== 后台登录（仅登录、无注册）：顶层路由，不挂在 /admin 父级下，否则会被 requiresAuth 守卫拦截 =====
+    { path: '/admin/login', name: 'admin-login', component: () => import('../views/admin/AdminLoginView.vue') },
+
     // ===== 私信：只要登录就能用 =====
     {
       path: '/chat',

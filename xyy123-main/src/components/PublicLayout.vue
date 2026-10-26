@@ -106,6 +106,16 @@ onMounted(async () => {
       </form>
 
       <div class="tb-header-actions">
+        <!-- 后台管理：专属登录入口（仅登录、无注册），点击进入站长后台 -->
+        <router-link to="/admin/login" class="tb-pill tb-pill-ghost tb-pill-admin">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="6" rx="1.5" />
+            <rect x="3" y="13" width="12" height="8" rx="1.5" />
+            <path d="M17 17h4M19 15v4" />
+          </svg>
+          后台管理
+        </router-link>
+
         <router-link to="/admin/posts/new" class="tb-pill tb-pill-primary">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
             <path d="M12 5v14M5 12h14" />
@@ -157,12 +167,13 @@ onMounted(async () => {
           消息
           <span v-if="unread" class="tb-side-dot">{{ unread > 99 ? '99+' : unread }}</span>
         </router-link>
-        <router-link to="/admin" class="tb-side-item">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-            <circle cx="12" cy="8.5" r="3.5" />
-            <path d="M5 20c1.2-3.6 4-5.2 7-5.2s5.8 1.6 7 5.2" />
+        <router-link to="/admin/login" class="tb-side-item">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="6" rx="1.5" />
+            <rect x="3" y="13" width="12" height="8" rx="1.5" />
+            <path d="M17 17h4M19 15v4" />
           </svg>
-          我的
+          后台管理
         </router-link>
       </nav>
 
