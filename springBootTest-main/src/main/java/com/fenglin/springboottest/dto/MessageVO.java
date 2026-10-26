@@ -11,6 +11,8 @@ public record MessageVO(
         Long conversationId,
         Long senderId,
         String senderName,
+        /** 发送者头像：null 表示没设置，前端回退显示名字首字 */
+        String senderAvatar,
         String content,
         LocalDateTime createdAt,
         boolean mine,

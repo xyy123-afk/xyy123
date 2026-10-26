@@ -187,10 +187,13 @@ public class ChatService {
                 "sticker".equals(type) ? "[表情包]" : preview(content), m.getCreatedAt(),
                 iAmA ? 0 : 1, iAmA ? 1 : 0);
 
-        MessageVO mine = new MessageVO(m.getId(), conv.getId(), meId, displayName(userMapper.selectById(meId)),
+        // 发送者只查一次：名字和头像都从这取
+        User meSender = userMapper.selectById(meId);
+        MessageVO mine = new MessageVO(m.getId(), conv.getId(), meId, displayName(meSender),
+                meSender == null ? null : meSender.getAvatar(),
                 m.getContent(), m.getCreatedAt(), true, false, false, type);
         Long peerId = iAmA ? conv.getUserBId() : conv.getUserAId();
-        MessageVO theirs = new MessageVO(m.getId(), conv.getId(), meId, mine.senderName(),
+        MessageVO theirs = new MessageVO(m.getId(), conv.getId(), meId, mine.senderName(), mine.senderAvatar(),
                 m.getContent(), m.getCreatedAt(), false, false, false, type);
 
         // 自己开的其它标签页也要收到（多端同步），所以给两边都推
@@ -342,6 +345,7 @@ public class ChatService {
         String type = m.getType() == null ? "text" : m.getType();
         return new MessageVO(m.getId(), m.getConversationId(), m.getSenderId(),
                 sender == null ? "已注销用户" : displayName(sender),
+                sender == null ? null : sender.getAvatar(),
                 // 撤回后原文不再下发，前端按 deleted 显示占位文案
                 deleted ? "" : m.getContent(), m.getCreatedAt(),
                 meId.equals(m.getSenderId()), m.getIsRead() != null && m.getIsRead() == 1, deleted, type);
