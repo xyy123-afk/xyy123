@@ -59,6 +59,10 @@ public class PublicBlogController {
     private static final long COMMENT_INTERVAL_MILLIS = 60_000L;
     private final Map<String, Long> lastCommentAt = new ConcurrentHashMap<>();
 
+    /** 阅读数去重：同一 IP 在窗口内重复打开同一篇文章不重复 +1，避免爬虫/刷新把阅读量打虚高 */
+    private static final long VIEW_DEDUP_MILLIS = 60 * 60 * 1000L;
+    private final Map<String, Long> lastViewAt = new ConcurrentHashMap<>();
+
     public PublicBlogController(PostMapper postMapper,
                                 CategoryMapper categoryMapper,
                                 TagMapper tagMapper,
@@ -99,18 +103,23 @@ public class PublicBlogController {
         return ApiResponse.ok(new PageResult<>(assembler.toListVOs(posts), total, pages, p, pageSize));
     }
 
-    /** 文章详情：GET /api/blog/posts/{slug}，顺便把阅读数 +1 */
+    /** 文章详情：GET /api/blog/posts/{slug}，顺便把阅读数 +1（同 IP 短时间重复打开不重复计） */
     @GetMapping("/posts/{slug}")
-    public ApiResponse<PostDetailVO> detail(@PathVariable String slug) {
+    public ApiResponse<PostDetailVO> detail(@PathVariable String slug, HttpServletRequest request) {
         Post post = postMapper.selectPublishedBySlug(slug);
         if (post == null) {
             return ApiResponse.fail("文章不存在或已下线", "");
         }
-        postMapper.incrementViewCount(post.getId());
-        if (post.getViewCount() == null) {
-            post.setViewCount(1);
-        } else {
-            post.setViewCount(post.getViewCount() + 1);
+        // 同一 IP 在窗口内重复打开同一篇不重复 +1，避免爬虫/刷新把阅读量打虚高
+        String key = clientIp(request) + ":" + post.getId();
+        long now = System.currentTimeMillis();
+        Long last = lastViewAt.get(key);
+        if (last == null || now - last > VIEW_DEDUP_MILLIS) {
+            postMapper.incrementViewCount(post.getId());
+            lastViewAt.put(key, now);
+            if (post.getViewCount() != null) {
+                post.setViewCount(post.getViewCount() + 1);
+            }
         }
         return ApiResponse.ok(assembler.toDetailVO(post));
     }

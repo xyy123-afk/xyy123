@@ -20,7 +20,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 认证接口。
@@ -42,6 +45,16 @@ public class AuthController {
     @Value("${blog.registration-enabled:false}")
     private boolean registrationEnabled;
 
+    /**
+     * 登录/注册防暴力破解：同一 IP 在窗口内失败次数过多就临时拒绝。
+     * 内存实现，和评论限流同一套路——重启即清、多实例各自独立，练手足够；
+     * 真上生产再换成 Redis 集中计数（见 P1 待办）。
+     */
+    private static final int AUTH_MAX_FAIL = 10;
+    private static final long AUTH_WINDOW_MILLIS = 10 * 60 * 1000L;
+    private final Map<String, Integer> authFailCount = new ConcurrentHashMap<>();
+    private final Map<String, Long> authFailSince = new ConcurrentHashMap<>();
+
     public AuthController(AuthService authService, UserMapper userMapper, JwtUtil jwtUtil, TokenBlacklist blacklist) {
         this.authService = authService;
         this.userMapper = userMapper;
@@ -54,17 +67,39 @@ public class AuthController {
      * 博客只给站长一个人写，默认关掉注册入口——保留接口只是为了以后想加协作者时改配置即可。
      */
     @PostMapping("/register")
-    public ApiResponse<UserVO> register(@RequestBody AuthRequest req) {
+    public ApiResponse<UserVO> register(@RequestBody AuthRequest req, HttpServletRequest request) {
         if (!registrationEnabled) {
             return ApiResponse.fail("本站未开放注册", "");
         }
-        return authService.register(req.username(), req.password());
+        String ip = clientIp(request);
+        if (isAuthBlocked(ip)) {
+            return ApiResponse.fail("操作过于频繁，请 10 分钟后再试", "");
+        }
+        ApiResponse<UserVO> res = authService.register(req.username(), req.password());
+        if (res.code() == 0) {
+            authFailCount.remove(ip);
+            authFailSince.remove(ip);
+        } else {
+            bumpAuthFailure(ip);
+        }
+        return res;
     }
 
-    /** 登录：请求体 { username, password } */
+    /** 登录：请求体 { username, password }，带防暴力破解限流 */
     @PostMapping("/login")
-    public ApiResponse<UserVO> login(@RequestBody AuthRequest req) {
-        return authService.login(req.username(), req.password());
+    public ApiResponse<UserVO> login(@RequestBody AuthRequest req, HttpServletRequest request) {
+        String ip = clientIp(request);
+        if (isAuthBlocked(ip)) {
+            return ApiResponse.fail("登录尝试过于频繁，请 10 分钟后再试", "");
+        }
+        ApiResponse<UserVO> res = authService.login(req.username(), req.password());
+        if (res.code() == 0) {
+            authFailCount.remove(ip);
+            authFailSince.remove(ip);
+        } else {
+            bumpAuthFailure(ip);
+        }
+        return res;
     }
 
     /**
@@ -168,5 +203,41 @@ public class AuthController {
             return token.isEmpty() ? null : token;
         }
         return null;
+    }
+
+    /** 该 IP 是否已被临时封禁（窗口内失败次数打满） */
+    private boolean isAuthBlocked(String ip) {
+        Long since = authFailSince.get(ip);
+        Integer n = authFailCount.get(ip);
+        if (since == null || n == null) {
+            return false;
+        }
+        // 窗口已过的计数直接清掉，不当作封禁
+        if (System.currentTimeMillis() - since > AUTH_WINDOW_MILLIS) {
+            authFailSince.remove(ip);
+            authFailCount.remove(ip);
+            return false;
+        }
+        return n >= AUTH_MAX_FAIL;
+    }
+
+    /** 记一次失败：首次开方窗口，之后累加；窗口过期则重新开始 */
+    private void bumpAuthFailure(String ip) {
+        Long since = authFailSince.get(ip);
+        if (since == null || System.currentTimeMillis() - since > AUTH_WINDOW_MILLIS) {
+            authFailSince.put(ip, System.currentTimeMillis());
+            authFailCount.put(ip, 1);
+        } else {
+            authFailCount.merge(ip, 1, Integer::sum);
+        }
+    }
+
+    /** 取真实客户端 IP：直连是 RemoteAddr，过 Nginx 才看 X-Forwarded-For 的第一段 */
+    private String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,6 +38,11 @@ public class BlogAssembler {
     private final UserMapper userMapper;
     private final String ownerUsername;
 
+    /** 分类缓存（带 TTL）：分类几乎不变，避免每次列表/详情都全表查。管理后台改了分类最多 5 分钟生效。 */
+    private static final long CATEGORY_TTL_MILLIS = 5 * 60 * 1000L;
+    private volatile Map<Long, String> categoryCache;
+    private volatile long categoryCacheAt;
+
     public BlogAssembler(CategoryMapper categoryMapper,
                          PostTagMapper postTagMapper,
                          UserMapper userMapper,
@@ -47,13 +53,24 @@ public class BlogAssembler {
         this.ownerUsername = ownerUsername;
     }
 
-    /** 分类 id -> 分类名 */
+    /** 分类 id -> 分类名（带 5 分钟 TTL 的内存缓存，避免每次列表/详情都全表查分类） */
     public Map<Long, String> categoryNameMap() {
-        Map<Long, String> map = new HashMap<>();
-        for (Category c : categoryMapper.selectList(null)) {
-            map.put(c.getId(), c.getName());
+        long now = System.currentTimeMillis();
+        if (categoryCache != null && now - categoryCacheAt < CATEGORY_TTL_MILLIS) {
+            return Collections.unmodifiableMap(categoryCache);
         }
-        return map;
+        synchronized (this) {
+            if (categoryCache != null && now - categoryCacheAt < CATEGORY_TTL_MILLIS) {
+                return Collections.unmodifiableMap(categoryCache);
+            }
+            Map<Long, String> map = new HashMap<>();
+            for (Category c : categoryMapper.selectList(null)) {
+                map.put(c.getId(), c.getName());
+            }
+            categoryCache = map;
+            categoryCacheAt = now;
+            return Collections.unmodifiableMap(categoryCache);
+        }
     }
 
     /** 文章 id -> 标签名列表（一次 SQL 查完整批） */

@@ -22,7 +22,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 私信业务。
@@ -66,11 +70,18 @@ public class ChatService {
     /** 我的会话列表（按最后一条消息时间倒序） */
     public List<ConversationVO> listConversations(Long meId) {
         List<Conversation> list = conversationMapper.selectByUser(meId);
+        // 一次性把会话对方的账号批量查出来，避免每条会话一次 selectById 的 N+1
+        Set<Long> peerIds = new HashSet<>();
+        for (Conversation c : list) {
+            peerIds.add(meId.equals(c.getUserAId()) ? c.getUserBId() : c.getUserAId());
+        }
+        Map<Long, User> peers = batchUsers(peerIds);
+
         List<ConversationVO> out = new ArrayList<>(list.size());
         for (Conversation c : list) {
             boolean iAmA = meId.equals(c.getUserAId());
             Long peerId = iAmA ? c.getUserBId() : c.getUserAId();
-            User peer = userMapper.selectById(peerId);
+            User peer = peers.get(peerId);
             if (peer == null) {
                 continue; // 对方账号已删除，会话没有展示意义
             }
@@ -95,10 +106,12 @@ public class ChatService {
     public List<MessageVO> listMessages(Long meId, Long conversationId) {
         Conversation conv = requireMine(meId, conversationId);
         List<Message> rows = messageMapper.selectRecent(conversationId, HISTORY_SIZE);
+        // 一次性把这批消息的发送者批量查出来，避免每条消息一次 selectById 的 N+1
+        Map<Long, User> senders = senderMap(rows);
         List<MessageVO> out = new ArrayList<>(rows.size());
         // SQL 是 id desc 取的（只要最近 N 条），这里翻转成聊天该有的正序
         for (int i = rows.size() - 1; i >= 0; i--) {
-            out.add(toVO(rows.get(i), meId));
+            out.add(toVO(rows.get(i), meId, senders));
         }
         markRead(meId, conv);
         return out;
@@ -111,9 +124,10 @@ public class ChatService {
     public List<MessageVO> listMessagesBefore(Long meId, Long conversationId, Long beforeId) {
         requireMine(meId, conversationId);
         List<Message> rows = messageMapper.selectBefore(conversationId, beforeId, HISTORY_SIZE);
+        Map<Long, User> senders = senderMap(rows);
         List<MessageVO> out = new ArrayList<>(rows.size());
         for (int i = rows.size() - 1; i >= 0; i--) {
-            out.add(toVO(rows.get(i), meId));
+            out.add(toVO(rows.get(i), meId, senders));
         }
         return out;
     }
@@ -322,8 +336,8 @@ public class ChatService {
         return sum;
     }
 
-    private MessageVO toVO(Message m, Long meId) {
-        User sender = userMapper.selectById(m.getSenderId());
+    private MessageVO toVO(Message m, Long meId, Map<Long, User> senders) {
+        User sender = m.getSenderId() == null ? null : senders.get(m.getSenderId());
         boolean deleted = nz(m.getDeleted()) == 1;
         String type = m.getType() == null ? "text" : m.getType();
         return new MessageVO(m.getId(), m.getConversationId(), m.getSenderId(),
@@ -331,6 +345,29 @@ public class ChatService {
                 // 撤回后原文不再下发，前端按 deleted 显示占位文案
                 deleted ? "" : m.getContent(), m.getCreatedAt(),
                 meId.equals(m.getSenderId()), m.getIsRead() != null && m.getIsRead() == 1, deleted, type);
+    }
+
+    /** 批量查消息发送者，按 id 建 map；空集合直接返回空 map，避免 N+1 */
+    private Map<Long, User> senderMap(List<Message> messages) {
+        Set<Long> ids = new HashSet<>();
+        for (Message m : messages) {
+            if (m.getSenderId() != null) {
+                ids.add(m.getSenderId());
+            }
+        }
+        return batchUsers(ids);
+    }
+
+    /** 按 id 批量查用户，结果建 map；空集合直接返回空 map */
+    private Map<Long, User> batchUsers(Set<Long> ids) {
+        Map<Long, User> map = new HashMap<>();
+        if (ids == null || ids.isEmpty()) {
+            return map;
+        }
+        for (User u : userMapper.selectBatchIds(ids)) {
+            map.put(u.getId(), u);
+        }
+        return map;
     }
 
     private String preview(String content) {
