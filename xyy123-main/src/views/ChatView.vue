@@ -608,46 +608,46 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <!-- 表情面板：内置 Emoji + 我上传的表情包，只在选中会话时出现 -->
-            <div v-if="activeConv && panelOpen" class="tb-chat-panel">
-              <div class="tb-chat-panel-tabs">
-                <button type="button" :class="{ active: stickerTab === 'emoji' }" @click="stickerTab = 'emoji'">
-                  Emoji
-                </button>
-                <button type="button" :class="{ active: stickerTab === 'mine' }" @click="stickerTab = 'mine'">
-                  我的表情包
-                </button>
-                <button type="button" class="tb-chat-panel-close" title="收起" @click="panelOpen = false">×</button>
-              </div>
-
-              <div v-if="stickerTab === 'emoji'" class="tb-chat-emoji-grid">
-                <button v-for="e in EMOJIS" :key="e" type="button" @click="draft += e">{{ e }}</button>
-              </div>
-
-              <div v-else class="tb-chat-sticker-grid">
-                <button
-                  v-for="s in stickers"
-                  :key="s.id"
-                  type="button"
-                  class="tb-chat-sticker-item"
-                  :title="s.name || '点击发送'"
-                  @click="sendSticker(s)"
-                >
-                  <img :src="s.url" alt="" />
-                  <i class="tb-chat-sticker-del" title="删除" @click.stop="removeSticker(s)">×</i>
-                </button>
-                <label class="tb-chat-sticker-add" :class="{ busy: stickerUploading }">
-                  <input ref="stickerInput" type="file" accept="image/*" hidden @change="uploadSticker" />
-                  <span v-if="stickerUploading">上传中…</span>
-                  <span v-else>＋<em>上传</em></span>
-                </label>
-                <p v-if="!stickers.length && !stickerUploading" class="tb-chat-panel-empty">
-                  还没有表情包，点「＋上传」加一张（≤5MB，jpg/png/gif/webp）。
-                </p>
-              </div>
-            </div>
-
             <form class="tb-chat-input" @submit.prevent="send">
+              <!-- 表情面板：放在 form 内部才能以输入条（position:relative）为锚点悬浮 -->
+              <div v-if="activeConv && panelOpen" class="tb-chat-panel">
+                <div class="tb-chat-panel-tabs">
+                  <button type="button" :class="{ active: stickerTab === 'emoji' }" @click="stickerTab = 'emoji'">
+                    Emoji
+                  </button>
+                  <button type="button" :class="{ active: stickerTab === 'mine' }" @click="stickerTab = 'mine'">
+                    我的表情包
+                  </button>
+                  <button type="button" class="tb-chat-panel-close" title="收起" @click="panelOpen = false">×</button>
+                </div>
+
+                <div v-if="stickerTab === 'emoji'" class="tb-chat-emoji-grid">
+                  <button v-for="e in EMOJIS" :key="e" type="button" @click="draft += e">{{ e }}</button>
+                </div>
+
+                <div v-else class="tb-chat-sticker-grid">
+                  <button
+                    v-for="s in stickers"
+                    :key="s.id"
+                    type="button"
+                    class="tb-chat-sticker-item"
+                    :title="s.name || '点击发送'"
+                    @click="sendSticker(s)"
+                  >
+                    <img :src="s.url" alt="" />
+                    <i class="tb-chat-sticker-del" title="删除" @click.stop="removeSticker(s)">×</i>
+                  </button>
+                  <label class="tb-chat-sticker-add" :class="{ busy: stickerUploading }">
+                    <input ref="stickerInput" type="file" accept="image/*" hidden @change="uploadSticker" />
+                    <span v-if="stickerUploading">上传中…</span>
+                    <span v-else>＋<em>上传</em></span>
+                  </label>
+                  <p v-if="!stickers.length && !stickerUploading" class="tb-chat-panel-empty">
+                    还没有表情包，点「＋上传」加一张（≤5MB，jpg/png/gif/webp）。
+                  </p>
+                </div>
+              </div>
+
               <button
                 type="button"
                 class="tb-chat-emoji-btn"
