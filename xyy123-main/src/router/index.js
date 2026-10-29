@@ -50,7 +50,8 @@ const router = createRouter({
         { path: 'posts/new', name: 'admin-post-new', component: () => import('../views/admin/PostEditor.vue') },
         { path: 'posts/:id/edit', name: 'admin-post-edit', component: () => import('../views/admin/PostEditor.vue') },
         { path: 'comments', name: 'admin-comments', component: () => import('../views/admin/AdminComments.vue') },
-        { path: 'meta', name: 'admin-meta', component: () => import('../views/admin/AdminMeta.vue') }
+        { path: 'meta', name: 'admin-meta', component: () => import('../views/admin/AdminMeta.vue') },
+        { path: 'site', name: 'admin-site', component: () => import('../views/admin/AdminSiteView.vue') }
       ]
     },
 

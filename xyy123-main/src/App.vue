@@ -2,6 +2,7 @@
 import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { startGlobalChat } from './utils/chatBus'
+import { loadSite } from './site.config'
 
 const route = useRoute()
 
@@ -23,7 +24,11 @@ watch(
 )
 
 // 私信的 WebSocket 提到应用级别：在首页看文章时，别人发来的消息也能把顶栏红点点亮
-onMounted(startGlobalChat)
+// 启动时顺便拉一次站点设置：博客名/副标题/作者从后台读，不再写死在前端
+onMounted(() => {
+  loadSite()
+  startGlobalChat()
+})
 </script>
 
 <template>

@@ -239,6 +239,23 @@ export function stickerDelete(id) {
   return send('DELETE', `/chat/stickers/${id}`)
 }
 
+/* ===================== 站点设置 ===================== */
+
+/** 公开接口：前台启动时拉一次，博客名/副标题/作者等不再写死在前端 */
+export function fetchSite() {
+  return send('GET', '/blog/site')
+}
+
+/** 后台读取站点设置 */
+export function adminGetSite() {
+  return send('GET', '/admin/site')
+}
+
+/** 后台保存站点设置：{ name, subtitle, description, author, sinceYear } */
+export function adminSaveSite(payload) {
+  return send('PUT', '/admin/site', payload)
+}
+
 /* ===================== 写作后台（需站长 token） ===================== */
 
 export function adminStats() {

@@ -359,6 +359,38 @@ async function sendSticker(st) {
   sending.value = false
 }
 
+/** 点击聊天里的表情包 → 新标签页看原图（Vue 模板里拿不到 window，必须走方法） */
+function openSticker(url) {
+  if (url) window.open(url, '_blank')
+}
+
+/**
+ * 直接发图：选文件 → 上传 → 立即作为一条 sticker 消息发出（不进收藏夹）。
+ * 和面板里「＋上传」的区别：那个是收藏，这个是直接发给对方。
+ */
+async function sendImageFile(event) {
+  const file = event.target.files?.[0]
+  event.target.value = '' // 允许连续选同一张图
+  if (!file || sendingImage.value || !activeId.value) return
+
+  sendingImage.value = true
+  const up = await uploadImage(file)
+  if (up.code !== 0) {
+    error.value = up.msg || '图片上传失败'
+    sendingImage.value = false
+    return
+  }
+  const res = await chatSend({ conversationId: activeId.value, content: up.data.url, type: 'sticker' })
+  if (res.code === 0) {
+    pushIfAbsent(res.data)
+    scrollToBottom()
+    panelOpen.value = false // 发完顺手收起面板，和微信的手感一致
+  } else {
+    error.value = res.msg || '发送失败'
+  }
+  sendingImage.value = false
+}
+
 /** 自己发的、没撤回过、且还在 2 分钟内的消息才显示「撤回」 */function canRecall(m) {
   if (!m.mine || m.deleted) return false
   const t = new Date(m.createdAt).getTime()
@@ -592,7 +624,7 @@ onBeforeUnmount(() => {
                     class="tb-chat-sticker"
                     :src="m.content"
                     alt="表情包"
-                    @click="window && window.open(m.content, '_blank')"
+                    @click="openSticker(m.content)"
                   />
                   <p v-else>{{ m.content }}</p>
                   <i>
@@ -618,6 +650,17 @@ onBeforeUnmount(() => {
                   <button type="button" :class="{ active: stickerTab === 'mine' }" @click="stickerTab = 'mine'">
                     我的表情包
                   </button>
+                  <!-- 直接发图：选一张图上传后立刻发给对方，不占用收藏夹 -->
+                  <button
+                    type="button"
+                    class="tb-chat-panel-sendimg"
+                    :disabled="sendingImage"
+                    :title="sendingImage ? '上传发送中…' : '选一张图片直接发送'"
+                    @click="imageInput?.click()"
+                  >
+                    {{ sendingImage ? '发送中…' : '🖼 发图' }}
+                  </button>
+                  <input ref="imageInput" type="file" accept="image/*" hidden @change="sendImageFile" />
                   <button type="button" class="tb-chat-panel-close" title="收起" @click="panelOpen = false">×</button>
                 </div>
 
@@ -655,10 +698,11 @@ onBeforeUnmount(() => {
                 title="表情"
                 @click="panelOpen = !panelOpen"
               >
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-                  <circle cx="12" cy="12" r="8.5" />
-                  <path d="M9 10h.01M15 10h.01" stroke-width="2.6" />
-                  <path d="M8.6 14.2c.9 1 2 1.5 3.4 1.5s2.5-.5 3.4-1.5" />
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="8.6" />
+                  <circle cx="9.2" cy="9.9" r="1.1" fill="currentColor" stroke="none" />
+                  <circle cx="14.8" cy="9.9" r="1.1" fill="currentColor" stroke="none" />
+                  <path d="M8.7 14c.95 1.15 2.05 1.72 3.3 1.72s2.35-.57 3.3-1.72" />
                 </svg>
               </button>
               <input v-model="draft" placeholder="输入消息，回车发送" maxlength="1000" />

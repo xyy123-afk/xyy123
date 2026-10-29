@@ -220,6 +220,24 @@ CREATE TABLE IF NOT EXISTS stickers (
   COLLATE = utf8mb4_unicode_ci
   COMMENT = '表情包收藏表';
 
+-- ---------- 7.5 站点设置（单行表，id 恒为 1） ----------
+-- 博客名 / 副标题 / 描述 / 作者 / 建站年份都在这里，后台「站点设置」页可改，
+-- 前台启动时从 /api/blog/site 拉一次，不再写死在前端 site.config.js。
+-- 用单行表而不是 key-value，是因为字段固定、强类型，VO 直接映射更省事。
+CREATE TABLE IF NOT EXISTS site_settings (
+  id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，恒为 1',
+  name         VARCHAR(32)     NOT NULL                COMMENT '博客名',
+  subtitle     VARCHAR(64)     NULL                    COMMENT '副标题',
+  description  VARCHAR(200)    NULL                    COMMENT '一句话简介，页脚 / meta 用',
+  author       VARCHAR(32)     NULL                    COMMENT '作者显示名',
+  since_year   INT             NULL                    COMMENT '建站年份，页脚 © 用',
+  updated_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (id)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT = '站点设置（单行表，id 恒为 1）';
+
 -- ---------- 8. 清理旧业务表（Todo 已下线，全库已备份） ----------
 DROP TABLE IF EXISTS todos;
 
@@ -249,7 +267,11 @@ INSERT IGNORE INTO categories (name, slug, sort_order) VALUES
 INSERT IGNORE INTO tags (name) VALUES
   ('Java'), ('Vue'), ('MySQL'), ('折腾记');
 
--- 9.4 示例文章（让首页一打开就有东西看，不需要可以删）
+-- 9.4 站点设置默认行（id 恒为 1，重复执行不报错）
+INSERT IGNORE INTO site_settings (id, name, subtitle, description, author, since_year)
+VALUES (1, '枫林小筑', '代码、笔记与生活', '一个后端练习项目的二次生长：把待办清单改成了博客。', '站长', 2026);
+
+-- 9.5 示例文章（让首页一打开就有东西看，不需要可以删）
 INSERT IGNORE INTO posts
   (title, slug, summary, content_md, content_html, status, is_top, category_id, published_at)
 VALUES (

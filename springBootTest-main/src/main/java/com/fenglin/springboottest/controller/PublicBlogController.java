@@ -13,10 +13,12 @@ import com.fenglin.springboottest.dto.PostListVO;
 import com.fenglin.springboottest.dto.TagVO;
 import com.fenglin.springboottest.entity.Comment;
 import com.fenglin.springboottest.entity.Post;
+import com.fenglin.springboottest.entity.SiteSetting;
 import com.fenglin.springboottest.entity.User;
 import com.fenglin.springboottest.mapper.CategoryMapper;
 import com.fenglin.springboottest.mapper.CommentMapper;
 import com.fenglin.springboottest.mapper.PostMapper;
+import com.fenglin.springboottest.mapper.SiteSettingMapper;
 import com.fenglin.springboottest.mapper.TagMapper;
 import com.fenglin.springboottest.mapper.UserMapper;
 import com.fenglin.springboottest.service.BlogAssembler;
@@ -53,6 +55,7 @@ public class PublicBlogController {
     private final BlogAssembler assembler;
     private final AuthContext authContext;
     private final UserMapper userMapper;
+    private final SiteSettingMapper siteSettingMapper;
     private final String ownerUsername;
 
     /** 评论防灌水：同一 IP 60 秒只能发一条，简单够用（内存实现，重启即清） */
@@ -70,6 +73,7 @@ public class PublicBlogController {
                                 BlogAssembler assembler,
                                 AuthContext authContext,
                                 UserMapper userMapper,
+                                SiteSettingMapper siteSettingMapper,
                                 @Value("${blog.owner-username:demo001}") String ownerUsername) {
         this.postMapper = postMapper;
         this.categoryMapper = categoryMapper;
@@ -78,7 +82,28 @@ public class PublicBlogController {
         this.assembler = assembler;
         this.authContext = authContext;
         this.userMapper = userMapper;
+        this.siteSettingMapper = siteSettingMapper;
         this.ownerUsername = ownerUsername;
+    }
+
+    /**
+     * 站点信息：GET /api/blog/site
+     * 公开接口，前台启动时拉一次，用来替换写死在前端的博客名/副标题/作者等。
+     * 表没初始化时兜底默认值，保证永远有东西返回。
+     */
+    @GetMapping("/site")
+    public ApiResponse<SiteSetting> site() {
+        SiteSetting s = siteSettingMapper.selectById(1L);
+        if (s == null) {
+            s = new SiteSetting();
+            s.setId(1L);
+            s.setName("枫林小筑");
+            s.setSubtitle("代码、笔记与生活");
+            s.setDescription("一个后端练习项目的二次生长：把待办清单改成了博客。");
+            s.setAuthor("站长");
+            s.setSinceYear(2026);
+        }
+        return ApiResponse.ok(s);
     }
 
     /**

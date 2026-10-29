@@ -40,6 +40,7 @@ onMounted(() => {
         <router-link to="/admin/posts/new" active-class="active">写文章</router-link>
         <router-link to="/admin/comments" active-class="active">评论</router-link>
         <router-link to="/admin/meta" active-class="active">分类 / 标签</router-link>
+        <router-link to="/admin/site" active-class="active">站点设置</router-link>
         <!-- 私信页面在前台布局里，点过去会切回贴吧风；后台只管提醒"有未读" -->
         <router-link to="/chat" class="admin-nav-chat">
           私信
