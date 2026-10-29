@@ -1,17 +1,17 @@
 /*
  Navicat Premium Dump SQL
 
- Source Server         : localhost_3306
+ Source Server         : test
  Source Server Type    : MySQL
- Source Server Version : 80046 (8.0.46)
+ Source Server Version : 80039 (8.0.39)
  Source Host           : localhost:3306
  Source Schema         : xyy_login
 
  Target Server Type    : MySQL
- Target Server Version : 80046 (8.0.46)
+ Target Server Version : 80039 (8.0.39)
  File Encoding         : 65001
 
- Date: 28/10/2026 16:46:19
+ Date: 29/10/2026 15:09:04
 */
 
 SET NAMES utf8mb4;
@@ -35,9 +35,9 @@ CREATE TABLE `categories`  (
 -- ----------------------------
 -- Records of categories
 -- ----------------------------
-INSERT INTO `categories` VALUES (1, '技术', 'tech', 1, '2026-10-28 16:23:33');
-INSERT INTO `categories` VALUES (2, '生活', 'life', 2, '2026-10-28 16:23:33');
-INSERT INTO `categories` VALUES (3, '随笔', 'essay', 3, '2026-10-28 16:23:33');
+INSERT INTO `categories` VALUES (1, '技术', 'tech', 1, '2026-10-29 14:08:51');
+INSERT INTO `categories` VALUES (2, '生活', 'life', 2, '2026-10-29 14:08:51');
+INSERT INTO `categories` VALUES (3, '随笔', 'essay', 3, '2026-10-29 14:08:51');
 
 -- ----------------------------
 -- Table structure for comments
@@ -80,12 +80,14 @@ CREATE TABLE `conversations`  (
   UNIQUE INDEX `uk_conv_pair`(`user_a_id` ASC, `user_b_id` ASC) USING BTREE COMMENT '同一对用户只有一条会话',
   INDEX `idx_conv_a`(`user_a_id` ASC, `last_message_at` ASC) USING BTREE,
   INDEX `idx_conv_b`(`user_b_id` ASC, `last_message_at` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信会话表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信会话表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of conversations
 -- ----------------------------
-INSERT INTO `conversations` VALUES (1, 1, 2, '[表情包]', '2026-10-28 16:45:15', 0, 3, '2026-10-28 16:39:04', '2026-10-28 16:45:15');
+INSERT INTO `conversations` VALUES (1, 1, 4, '😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭', '2026-10-29 14:35:57', 0, 2, '2026-10-29 14:09:51', '2026-10-29 14:35:57');
+INSERT INTO `conversations` VALUES (2, 4, 8, '知道就好', '2026-10-29 14:27:55', 0, 0, '2026-10-29 14:26:29', '2026-10-29 14:28:09');
+INSERT INTO `conversations` VALUES (3, 1, 2, '[表情包]', '2026-10-29 14:50:32', 0, 2, '2026-10-29 14:46:36', '2026-10-29 14:50:31');
 
 -- ----------------------------
 -- Table structure for messages
@@ -103,14 +105,26 @@ CREATE TABLE `messages`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_msg_conv`(`conversation_id` ASC, `id` ASC) USING BTREE COMMENT '按会话取历史消息',
   INDEX `idx_msg_sender`(`sender_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信消息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信消息表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of messages
 -- ----------------------------
-INSERT INTO `messages` VALUES (1, 1, 1, '1', 'text', 0, 1, '2026-10-28 16:42:44');
-INSERT INTO `messages` VALUES (2, 1, 1, '哈', 'text', 0, 0, '2026-10-28 16:44:07');
-INSERT INTO `messages` VALUES (3, 1, 1, '/uploads/2026-10/125f16e6066c4c0ea87feff485e6e31d.jpeg', 'sticker', 0, 0, '2026-10-28 16:45:15');
+INSERT INTO `messages` VALUES (1, 1, 4, '🤣', 'text', 1, 1, '2026-10-29 14:10:02');
+INSERT INTO `messages` VALUES (2, 1, 4, '1', 'text', 1, 0, '2026-10-29 14:11:37');
+INSERT INTO `messages` VALUES (3, 1, 4, '😀', 'text', 1, 0, '2026-10-29 14:16:26');
+INSERT INTO `messages` VALUES (4, 1, 4, '/uploads/2026-10/7877537c0924450dbe0755f2b4a6f46c.jpg', 'sticker', 1, 0, '2026-10-29 14:19:16');
+INSERT INTO `messages` VALUES (5, 1, 4, '/uploads/2026-10/7877537c0924450dbe0755f2b4a6f46c.jpg', 'sticker', 1, 1, '2026-10-29 14:19:24');
+INSERT INTO `messages` VALUES (6, 1, 4, '我是朱咪咪现在正式上线', 'text', 1, 0, '2026-10-29 14:23:16');
+INSERT INTO `messages` VALUES (7, 1, 4, '这里已经被我接管了', 'text', 1, 0, '2026-10-29 14:23:35');
+INSERT INTO `messages` VALUES (8, 1, 4, '/uploads/2026-10/602d7c9aef8c4d319782e79ce1dc744c.jpeg', 'sticker', 1, 0, '2026-10-29 14:24:10');
+INSERT INTO `messages` VALUES (9, 2, 8, '听说你很娼', 'text', 1, 1, '2026-10-29 14:27:01');
+INSERT INTO `messages` VALUES (10, 2, 4, '知道就好', 'text', 1, 0, '2026-10-29 14:27:17');
+INSERT INTO `messages` VALUES (11, 2, 4, '/uploads/2026-10/7877537c0924450dbe0755f2b4a6f46c.jpg', 'sticker', 1, 1, '2026-10-29 14:27:55');
+INSERT INTO `messages` VALUES (12, 1, 1, '😭', 'text', 0, 0, '2026-10-29 14:35:50');
+INSERT INTO `messages` VALUES (13, 1, 1, '😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭', 'text', 0, 0, '2026-10-29 14:35:57');
+INSERT INTO `messages` VALUES (14, 3, 1, '/uploads/2026-10/602d7c9aef8c4d319782e79ce1dc744c.jpeg', 'sticker', 0, 0, '2026-10-29 14:46:36');
+INSERT INTO `messages` VALUES (15, 3, 1, '/uploads/2026-10/26bae7e64cc24ecfb0a5e4b98c0b179a.jpg', 'sticker', 0, 0, '2026-10-29 14:50:32');
 
 -- ----------------------------
 -- Table structure for post_tags
@@ -157,7 +171,27 @@ CREATE TABLE `posts`  (
 -- ----------------------------
 -- Records of posts
 -- ----------------------------
-INSERT INTO `posts` VALUES (1, '博客开张：从待办清单到个人博客', 'hello-blog', '这个项目原本是一个登录 + 待办清单的练手 demo，现在改成了单作者博客：前台公开阅读，后台 Markdown 写作。', '# 博客开张\n\n这个项目原本是「登录 + 待办清单」的练手 demo，现在改成了单作者博客：\n\n- **前台**公开阅读，不需要登录\n- **后台**用 Markdown 写作，带实时预览\n- 支持分类、标签、归档、搜索、评论\n\n## 一段代码\n\n```java\n@GetMapping(\"/api/blog/posts\")\npublic ApiResponse<PageResult<PostListVO>> list(...) {\n    return ApiResponse.ok(...);\n}\n```\n\n## 下一步\n\n进 [/admin](/admin) 写你自己的第一篇。\n', '<h1>博客开张</h1><p>这个项目原本是「登录 + 待办清单」的练手 demo，现在改成了单作者博客：</p><ul><li><strong>前台</strong>公开阅读，不需要登录</li><li><strong>后台</strong>用 Markdown 写作，带实时预览</li><li>支持分类、标签、归档、搜索、评论</li></ul><h2>一段代码</h2><pre><code class=\"language-java\">@GetMapping(&quot;/api/blog/posts&quot;)\npublic ApiResponse&lt;PageResult&lt;PostListVO&gt;&gt; list(...) {\n    return ApiResponse.ok(...);\n}\n</code></pre><h2>下一步</h2><p>进 <a href=\"/admin\">/admin</a> 写你自己的第一篇。</p>', NULL, 1, 1, 0, 1, '2026-10-28 16:23:33', '2026-10-28 16:23:33', '2026-10-28 16:23:33');
+INSERT INTO `posts` VALUES (1, '博客开张：从待办清单到个人博客', 'hello-blog', '这个项目原本是一个登录 + 待办清单的练手 demo，现在改成了单作者博客：前台公开阅读，后台 Markdown 写作。', '# 博客开张\n\n这个项目原本是「登录 + 待办清单」的练手 demo，现在改成了单作者博客：\n\n- **前台**公开阅读，不需要登录\n- **后台**用 Markdown 写作，带实时预览\n- 支持分类、标签、归档、搜索、评论\n\n## 一段代码\n\n```java\n@GetMapping(\"/api/blog/posts\")\npublic ApiResponse<PageResult<PostListVO>> list(...) {\n    return ApiResponse.ok(...);\n}\n```\n\n## 下一步\n\n进 [/admin](/admin) 写你自己的第一篇。\n', '<h1>博客开张</h1><p>这个项目原本是「登录 + 待办清单」的练手 demo，现在改成了单作者博客：</p><ul><li><strong>前台</strong>公开阅读，不需要登录</li><li><strong>后台</strong>用 Markdown 写作，带实时预览</li><li>支持分类、标签、归档、搜索、评论</li></ul><h2>一段代码</h2><pre><code class=\"language-java\">@GetMapping(&quot;/api/blog/posts&quot;)\npublic ApiResponse&lt;PageResult&lt;PostListVO&gt;&gt; list(...) {\n    return ApiResponse.ok(...);\n}\n</code></pre><h2>下一步</h2><p>进 <a href=\"/admin\">/admin</a> 写你自己的第一篇。</p>', NULL, 1, 1, 0, 1, '2026-10-29 14:08:51', '2026-10-29 14:08:51', '2026-10-29 14:08:51');
+
+-- ----------------------------
+-- Table structure for site_settings
+-- ----------------------------
+DROP TABLE IF EXISTS `site_settings`;
+CREATE TABLE `site_settings`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '涓婚敭锛屾亽涓?1',
+  `name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '鍗氬?鍚',
+  `subtitle` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '鍓?爣棰',
+  `description` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '涓?彞璇濈畝浠嬶紝椤佃剼 / meta 鐢',
+  `author` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '浣滆?鏄剧ず鍚',
+  `since_year` int NULL DEFAULT NULL COMMENT '寤虹珯骞翠唤锛岄〉鑴?漏 鐢',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '绔欑偣璁剧疆锛堝崟琛岃〃锛宨d 鎭掍负 1锛' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of site_settings
+-- ----------------------------
+INSERT INTO `site_settings` VALUES (1, '博客', '代码、笔记与生活', '这里是嘻嘻的博客', '绳匠', 2026, '2026-10-29 14:35:16');
 
 -- ----------------------------
 -- Table structure for stickers
@@ -171,12 +205,13 @@ CREATE TABLE `stickers`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_sticker_user`(`user_id` ASC, `id` ASC) USING BTREE COMMENT '按用户取收藏列表'
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '表情包收藏表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '表情包收藏表' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of stickers
 -- ----------------------------
-INSERT INTO `stickers` VALUES (1, 1, '/uploads/2026-10/125f16e6066c4c0ea87feff485e6e31d.jpeg', '44e5bbd8c5427d4fdff43270136efeae.jpeg', '2026-10-28 16:45:13');
+INSERT INTO `stickers` VALUES (1, 4, '/uploads/2026-10/7877537c0924450dbe0755f2b4a6f46c.jpg', 'a310e218ff3e4562c6a2725dd9c545f2.jpg', '2026-10-29 14:19:13');
+INSERT INTO `stickers` VALUES (2, 4, '/uploads/2026-10/602d7c9aef8c4d319782e79ce1dc744c.jpeg', 'eecfbcb2fac00a373e6c57560759c202.jpeg', '2026-10-29 14:24:08');
 
 -- ----------------------------
 -- Table structure for tags
@@ -193,10 +228,11 @@ CREATE TABLE `tags`  (
 -- ----------------------------
 -- Records of tags
 -- ----------------------------
-INSERT INTO `tags` VALUES (1, 'Java', '2026-10-28 16:23:33');
-INSERT INTO `tags` VALUES (2, 'Vue', '2026-10-28 16:23:33');
-INSERT INTO `tags` VALUES (3, 'MySQL', '2026-10-28 16:23:33');
-INSERT INTO `tags` VALUES (4, '折腾记', '2026-10-28 16:23:33');
+INSERT INTO `tags` VALUES (1, 'Java', '2026-10-29 14:08:51');
+INSERT INTO `tags` VALUES (2, 'Vue', '2026-10-29 14:08:51');
+INSERT INTO `tags` VALUES (3, 'MySQL', '2026-10-29 14:08:51');
+INSERT INTO `tags` VALUES (4, '折腾记', '2026-10-29 14:08:51');
+INSERT INTO `tags` VALUES (5, '鎶樿吘璁', '2026-10-29 14:25:37');
 
 -- ----------------------------
 -- Table structure for users
@@ -211,13 +247,15 @@ CREATE TABLE `users`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_users_username`(`username` ASC) USING BTREE COMMENT '用户名唯一'
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表（单作者博客，只放站长账号）' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表（单作者博客，只放站长账号）' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES (1, 'demo001', '$2b$10$wdpqNRdeaw.BB7g/t1Wit.jakrp6AYeOJpFKhJtP.Yqrbn07l5Q9y', '站长', '/uploads/2026-10/e47459c572df417cb1e1ac36f5d4f494.jpeg', '2026-10-28 16:23:33');
-INSERT INTO `users` VALUES (2, 'xiaoming', '$2b$10$wdpqNRdeaw.BB7g/t1Wit.jakrp6AYeOJpFKhJtP.Yqrbn07l5Q9y', '小明', NULL, '2026-10-28 16:23:33');
-INSERT INTO `users` VALUES (3, 'xiaohong', '$2b$10$wdpqNRdeaw.BB7g/t1Wit.jakrp6AYeOJpFKhJtP.Yqrbn07l5Q9y', '小红', NULL, '2026-10-28 16:23:33');
+INSERT INTO `users` VALUES (1, 'demo001', '$2b$10$wdpqNRdeaw.BB7g/t1Wit.jakrp6AYeOJpFKhJtP.Yqrbn07l5Q9y', '站长', NULL, '2026-10-29 14:08:51');
+INSERT INTO `users` VALUES (2, 'xiaoming', '$2b$10$wdpqNRdeaw.BB7g/t1Wit.jakrp6AYeOJpFKhJtP.Yqrbn07l5Q9y', '小明', NULL, '2026-10-29 14:08:51');
+INSERT INTO `users` VALUES (3, 'xiaohong', '$2b$10$wdpqNRdeaw.BB7g/t1Wit.jakrp6AYeOJpFKhJtP.Yqrbn07l5Q9y', '小红', NULL, '2026-10-29 14:08:51');
+INSERT INTO `users` VALUES (4, 'danm', '$2a$10$ddEf74RZ/Wbiu0O8OQwQqOQBK/lY6.mp78bNYcgZIbaDOBGE/cMSC', NULL, '/uploads/2026-10/e8a126fef6ee43d7ac9e7094fc8ff697.jpeg', '2026-10-29 14:09:44');
+INSERT INTO `users` VALUES (8, '咪咪', '$2a$10$QBcTlkGUbUxrbs0e7Ac1zOpinJekDZEh7QuPCcI5cCJezH.y.Z6b2', NULL, NULL, '2026-10-29 14:26:18');
 
 SET FOREIGN_KEY_CHECKS = 1;
