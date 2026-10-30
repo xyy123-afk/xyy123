@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 /**
  * 日间 / 夜间主题。
@@ -14,6 +14,12 @@ import { ref } from 'vue'
 const KEY = 'tb-theme'
 const theme = ref(localStorage.getItem(KEY) === 'light' ? 'light' : 'dark')
 
+/**
+ * 只读的响应式状态，模板里直接拿来做 v-if / :class。
+ * 必须导出成 computed（而不是普通函数），切换主题时按钮图标才会跟着重渲染。
+ */
+export const isDark = computed(() => theme.value === 'dark')
+
 /** 把当前主题写到 <html> 上；原生控件配色（color-scheme）按区块决定 */
 export function applyTheme(section) {
   document.documentElement.dataset.theme = theme.value
@@ -25,9 +31,17 @@ export function currentTheme() {
   return theme.value
 }
 
-/** 切换并持久化。调用方拿到新值用于渲染按钮图标 */
+/**
+ * 切换并持久化。
+ *
+ * 关键：改完 ref 必须**立刻**把主题落到 <html data-theme> 上。
+ * 早先只改了 ref 就 return，靠 App.vue 里 watch(route) 去 applyTheme——
+ * 而路由不变时 watch 根本不触发，表现就是"点了按钮毫无反应"。
+ * 这里读 body[data-section] 拿到当前区块，和 App.vue 用的是同一套判断。
+ */
 export function toggleTheme() {
   theme.value = theme.value === 'dark' ? 'light' : 'dark'
   localStorage.setItem(KEY, theme.value)
+  applyTheme(document.body.dataset.section || 'public')
   return theme.value
 }

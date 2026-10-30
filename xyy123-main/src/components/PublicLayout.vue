@@ -1,10 +1,11 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ParticleField from './ParticleField.vue'
 import { SITE } from '../site.config'
 import { loadSiteMeta } from '../utils/siteMeta'
 import { getToken } from '../api'
+import { isDark, toggleTheme } from '../utils/theme'
 import { refreshUnread, startGlobalChat, unreadTotal } from '../utils/chatBus'
 
 const route = useRoute()
@@ -74,6 +75,27 @@ onMounted(async () => {
   // 登录后跳到内页时 App 早就挂载完了，这里兜一次连接（幂等，已连上不会重连）
   startGlobalChat()
 })
+
+// ===== 卡片聚光灯 =====
+// 指针在 .tb-panel 上移动时，把「相对卡片左上角」的坐标写进 --mx/--my，
+// style-blog.css 拿这两个变量画一团跟着指针走的柔光。
+// 用事件委托 + rAF 节流：不管页面多少张卡片都只挂一个监听，每帧最多算一次。
+let spotPending = false
+function onSpotMove(e) {
+  if (spotPending) return
+  spotPending = true
+  requestAnimationFrame(() => {
+    spotPending = false
+    const panel = e.target && e.target.closest ? e.target.closest('.tb-panel') : null
+    if (!panel) return
+    const rect = panel.getBoundingClientRect()
+    panel.style.setProperty('--mx', `${e.clientX - rect.left}px`)
+    panel.style.setProperty('--my', `${e.clientY - rect.top}px`)
+  })
+}
+
+onMounted(() => window.addEventListener('pointermove', onSpotMove, { passive: true }))
+onBeforeUnmount(() => window.removeEventListener('pointermove', onSpotMove))
 </script>
 
 <template>
@@ -106,13 +128,14 @@ onMounted(async () => {
       </form>
 
       <div class="tb-header-actions">
-        <!-- 日间/夜间切换：月亮=当前夜间（点击去日间），太阳=当前日间 -->
+        <!-- 日间/夜间切换：图标表示「点下去会切到哪个模式」
+             夜间 → 显示太阳（点了进日间）；日间 → 显示月亮（点了进夜间） -->
         <button
           type="button"
           class="tb-icon-btn"
           :aria-label="isDark ? '切换到日间模式' : '切换到夜间模式'"
           :title="isDark ? '日间模式' : '夜间模式'"
-          @click="switchTheme"
+          @click="toggleTheme"
         >
           <svg v-if="isDark" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="4" />

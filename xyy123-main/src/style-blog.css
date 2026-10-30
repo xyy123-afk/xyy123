@@ -440,8 +440,58 @@ body[data-section="public"] a {
 .tb-particles {
   position: fixed;
   inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/*
+ * 环境光晕：两团超大的柔光，垫在 body 背景之上、粒子之下（z-index: 0），
+ * 缓慢对漂，页面静止时也有"空气在流动"的感觉。柔和度全靠渐变衰减，
+ * 不用 filter: blur——那玩意是全屏像素级运算，滚动时会掉帧。
+ * 注意：不能用 z-index:-1——body 有 background-color，负值会被 body 底色盖掉，光晕直接消失。
+ */
+body[data-section="public"]::before,
+body[data-section="public"]::after {
+  content: "";
+  position: fixed;
   z-index: 0;
   pointer-events: none;
+  border-radius: 50%;
+}
+
+body[data-section="public"]::before {
+  width: 46vw;
+  height: 46vw;
+  top: -14vw;
+  left: -10vw;
+  background: radial-gradient(circle, var(--tb-aura-1), transparent 68%);
+  animation: tb-aura-a 26s ease-in-out infinite alternate;
+}
+
+body[data-section="public"]::after {
+  width: 40vw;
+  height: 40vw;
+  bottom: -12vw;
+  right: -8vw;
+  background: radial-gradient(circle, var(--tb-aura-2), transparent 68%);
+  animation: tb-aura-b 32s ease-in-out infinite alternate;
+}
+
+@keyframes tb-aura-a {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(9vw, 6vh) scale(1.12); }
+}
+
+@keyframes tb-aura-b {
+  from { transform: translate(0, 0) scale(1.08); }
+  to { transform: translate(-8vw, -7vh) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-section="public"]::before,
+  body[data-section="public"]::after {
+    animation: none;
+  }
 }
 
 /* ---------- 页面通用 ---------- */
@@ -453,9 +503,41 @@ body[data-section="public"] a {
   padding-bottom: 40px;
 }
 
+/*
+ * 玻璃卡片（参考 Odyssey 的暗色玻璃拟态）：
+ * 半透明底让背后的粒子和光晕透进来，backdrop-filter 再虚化一层，
+ * 发丝描边负责在深底上勾出轮廓。
+ * --mx/--my 是鼠标聚光灯的落点，由 PublicLayout 里的全局 pointermove 写入，
+ * CSS 只管画：指针在卡片上移动时，一团柔光跟着走。
+ */
 .tb-panel {
-  background: var(--tb-card);
+  position: relative;
+  background: var(--tb-card-glass);
+  border: 1px solid var(--tb-card-line);
   border-radius: var(--tb-radius);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  transition: border-color 0.25s, transform 0.25s;
+}
+
+.tb-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(560px circle at var(--mx, 50%) var(--my, 50%), var(--tb-spot), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+
+.tb-panel:hover::after {
+  opacity: 1;
+}
+
+/* 悬停时卡片轻轻一浮，配合聚光灯有"被点亮"的触感 */
+.tb-panel:hover {
+  transform: translateY(-2px);
 }
 
 .tb-loading,
@@ -508,6 +590,8 @@ body[data-section="public"] a {
   color: #fff;
   /* 留一点透明度，后面的粒子会从吧头里透出来，像一片会动的星空 */
   background: linear-gradient(120deg, rgba(28, 38, 58, 0.92) 0%, rgba(19, 25, 37, 0.88) 55%, rgba(14, 19, 28, 0.9) 100%);
+  /* 和玻璃卡片同一根发丝线，整页轮廓语言一致 */
+  border: 1px solid var(--tb-card-line);
   border-radius: var(--tb-radius);
 }
 
@@ -1043,7 +1127,7 @@ body[data-section="public"] a {
   padding: 2px 6px;
   background: var(--tb-surface-2);
   border-radius: 5px;
-  color: #ff8fa3;
+  color: var(--tb-code-inline);
 }
 
 .post-content pre {
@@ -1058,7 +1142,12 @@ body[data-section="public"] a {
 .post-content pre code {
   padding: 0;
   background: transparent;
-  color: var(--tb-text);
+  /*
+   * 这里必须是写死的浅色，不能跟 --tb-text 走。
+   * 代码块底色 --tb-code-bg 两套主题都是 #0a0d12（深色代码块是刻意的），
+   * 而 --tb-text 在日间模式会翻成 #1f2530，跟着走就成了"深字压深底"，整块糊掉。
+   */
+  color: #d9dfe8;
   font-size: 13.5px;
 }
 

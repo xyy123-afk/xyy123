@@ -23,6 +23,8 @@ html {
   --tb-surface-2: #1d222c;
   --tb-surface-3: #12161d;
   --tb-code-bg: #0a0d12;
+  /* 行内代码的文字色。代码块底色两套主题都保持深色，所以这里只给「行内代码」分深浅 */
+  --tb-code-inline: #ff8fa3;
   --tb-text: #e7eaf0;
   --tb-text-2: #a8b0bf;
   --tb-muted: #7b8497;
@@ -34,6 +36,14 @@ html {
   --tb-blue-dark: #7ba4ff;
   --tb-blue-soft: rgba(91, 140, 255, 0.14);
   --tb-header-bg: rgba(13, 16, 22, 0.82);
+  /* 玻璃卡片：半透明底 + 一根发丝描边（参考 Odyssey 那种暗色玻璃拟态） */
+  --tb-card-glass: rgba(22, 26, 34, 0.5);
+  --tb-card-line: rgba(255, 255, 255, 0.14);
+  /* 鼠标聚光灯：卡片上跟着指针走的柔光 */
+  --tb-spot: rgba(130, 170, 255, 0.3);
+  /* 环境光晕：页面角落两团缓慢漂移的柔光 */
+  --tb-aura-1: rgba(91, 140, 255, 0.26);
+  --tb-aura-2: rgba(150, 110, 255, 0.2);
   --tb-radius: 10px;
 }
 
@@ -49,6 +59,8 @@ html[data-theme="light"] body[data-section="public"] {
   --tb-surface-2: #eef1f6;
   --tb-surface-3: #e7ebf2;
   --tb-code-bg: #0a0d12;
+  /* 浅底上 #ff8fa3 的粉色太淡，压深一档保证看得清 */
+  --tb-code-inline: #c8315a;
   --tb-text: #1f2530;
   --tb-text-2: #454f61;
   --tb-muted: #7b8497;
@@ -59,15 +71,21 @@ html[data-theme="light"] body[data-section="public"] {
   --tb-blue-dark: #2b5ae0;
   --tb-blue-soft: rgba(58, 111, 242, 0.1);
   --tb-header-bg: rgba(245, 247, 251, 0.86);
+  /* 浅色玻璃：白底半透明 + 深色发丝线，聚光灯和光晕也相应调淡 */
+  --tb-card-glass: rgba(255, 255, 255, 0.5);
+  --tb-card-line: rgba(31, 37, 48, 0.16);
+  --tb-spot: rgba(58, 111, 242, 0.18);
+  --tb-aura-1: rgba(58, 111, 242, 0.16);
+  --tb-aura-2: rgba(122, 92, 255, 0.12);
   /* 顶部冷光换成更淡的版本，浅底上不会发灰 */
   background-image:
     radial-gradient(900px 480px at 50% -12%, rgba(58, 111, 242, 0.07), transparent 70%),
     radial-gradient(720px 420px at 100% 0%, rgba(122, 92, 255, 0.05), transparent 70%);
 }
 
-/* 浅底上淡蓝粒子几乎不可见，压低存在感，保持页面干净 */
+/* 浅底上淡蓝粒子几乎不可见，稍压低存在感即可，别压到看不见 */
 html[data-theme="light"] .tb-particles {
-  opacity: 0.35;
+  opacity: 0.6;
 }
 
 body {
