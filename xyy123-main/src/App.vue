@@ -3,6 +3,7 @@ import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { startGlobalChat } from './utils/chatBus'
 import { loadSite } from './site.config'
+import { applyTheme } from './utils/theme'
 
 const route = useRoute()
 
@@ -19,6 +20,8 @@ watch(
   section,
   (val) => {
     document.body.dataset.section = val
+    // 前台跟随用户选的日间/夜间主题；后台恒深色（applyTheme 内部处理）
+    applyTheme(val)
   },
   { immediate: true }
 )

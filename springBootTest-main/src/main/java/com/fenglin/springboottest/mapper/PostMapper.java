@@ -20,7 +20,7 @@ import java.util.List;
 public interface PostMapper extends BaseMapper<Post> {
 
     /** 列表页只查摘要字段，不把几十 KB 的正文一起捞出来 */
-    String LIST_COLUMNS = "id, title, slug, summary, cover, status, is_top, view_count, category_id, published_at, created_at, updated_at";
+    String LIST_COLUMNS = "id, title, slug, summary, cover, status, is_top, view_count, like_count, category_id, published_at, created_at, updated_at";
 
     /**
      * 前台文章列表：只取已发布（status=1），置顶优先，再按发布时间倒序。
@@ -95,6 +95,13 @@ public interface PostMapper extends BaseMapper<Post> {
     /** 阅读数自增，放在 SQL 里做避免并发下丢计数 */
     @Update("update posts set view_count = view_count + 1 where id = #{id}")
     int incrementViewCount(@Param("id") Long id);
+
+    /** 点赞数 +1 / -1（冗余列与 post_likes 表同步；SQL 自增自减不怕并发） */
+    @Update("update posts set like_count = like_count + 1 where id = #{id}")
+    int incrementLikeCount(@Param("id") Long id);
+
+    @Update("update posts set like_count = like_count - 1 where id = #{id} and like_count > 0")
+    int decrementLikeCount(@Param("id") Long id);
 
     /** 归档：按年月分组统计已发布文章数 */
     @Select("select date_format(published_at, '%Y') as `year`, " +

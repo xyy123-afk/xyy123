@@ -11,6 +11,7 @@ public record PostDetailVO(
         String summary,
         String cover,
         Integer viewCount,
+        Integer likeCount,
         Long categoryId,
         String categoryName,
         List<String> tags,

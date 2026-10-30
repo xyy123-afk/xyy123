@@ -8,21 +8,28 @@ import com.fenglin.springboottest.dto.ArchivePostVO;
 import com.fenglin.springboottest.dto.CategoryVO;
 import com.fenglin.springboottest.dto.CommentAddRequest;
 import com.fenglin.springboottest.dto.CommentVO;
+import com.fenglin.springboottest.dto.LikeStatusVO;
 import com.fenglin.springboottest.dto.PostDetailVO;
 import com.fenglin.springboottest.dto.PostListVO;
 import com.fenglin.springboottest.dto.TagVO;
 import com.fenglin.springboottest.entity.Comment;
+import com.fenglin.springboottest.entity.Link;
 import com.fenglin.springboottest.entity.Post;
+import com.fenglin.springboottest.entity.PostLike;
 import com.fenglin.springboottest.entity.SiteSetting;
 import com.fenglin.springboottest.entity.User;
 import com.fenglin.springboottest.mapper.CategoryMapper;
 import com.fenglin.springboottest.mapper.CommentMapper;
+import com.fenglin.springboottest.mapper.LinkMapper;
+import com.fenglin.springboottest.mapper.PostLikeMapper;
 import com.fenglin.springboottest.mapper.PostMapper;
 import com.fenglin.springboottest.mapper.SiteSettingMapper;
 import com.fenglin.springboottest.mapper.TagMapper;
 import com.fenglin.springboottest.mapper.UserMapper;
 import com.fenglin.springboottest.service.BlogAssembler;
+import com.fenglin.springboottest.service.NotifyMailService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,6 +63,9 @@ public class PublicBlogController {
     private final AuthContext authContext;
     private final UserMapper userMapper;
     private final SiteSettingMapper siteSettingMapper;
+    private final PostLikeMapper postLikeMapper;
+    private final LinkMapper linkMapper;
+    private final NotifyMailService notifyMailService;
     private final String ownerUsername;
 
     /** 评论防灌水：同一 IP 60 秒只能发一条，简单够用（内存实现，重启即清） */
@@ -74,6 +84,9 @@ public class PublicBlogController {
                                 AuthContext authContext,
                                 UserMapper userMapper,
                                 SiteSettingMapper siteSettingMapper,
+                                PostLikeMapper postLikeMapper,
+                                LinkMapper linkMapper,
+                                NotifyMailService notifyMailService,
                                 @Value("${blog.owner-username:demo001}") String ownerUsername) {
         this.postMapper = postMapper;
         this.categoryMapper = categoryMapper;
@@ -83,6 +96,9 @@ public class PublicBlogController {
         this.authContext = authContext;
         this.userMapper = userMapper;
         this.siteSettingMapper = siteSettingMapper;
+        this.postLikeMapper = postLikeMapper;
+        this.linkMapper = linkMapper;
+        this.notifyMailService = notifyMailService;
         this.ownerUsername = ownerUsername;
     }
 
@@ -253,9 +269,80 @@ public class PublicBlogController {
         commentMapper.insert(c);
 
         lastCommentAt.put(ip, now);
+        // 通知站长（异步，发送失败不影响本接口）：站长本人评论就不打扰自己了
+        if (me == null || !ownerUsername.equals(me.getUsername())) {
+            notifyMailService.notifyOwnerNewComment(post.getTitle(), post.getSlug(), nickname, content);
+        }
         boolean owner = me != null && ownerUsername.equals(me.getUsername());
         return ApiResponse.ok(new CommentVO(c.getId(), c.getNickname(), c.getContent(), c.getCreatedAt(),
                 List.of(), c.getUserId(), owner));
+    }
+
+    /**
+     * 点赞 / 取消点赞（切换式）：POST /api/blog/posts/{id}/like
+     * 必须登录——身份只从 token 认，游客会被要求先登录。
+     * 前端只需要一个按钮：赞了就取消，没赞就点赞，返回最新状态回填。
+     */
+    @PostMapping("/posts/{id}/like")
+    public ApiResponse<LikeStatusVO> toggleLike(@PathVariable Long id, HttpServletRequest request) {
+        Post post = postMapper.selectById(id);
+        if (post == null || !Integer.valueOf(1).equals(post.getStatus())) {
+            return ApiResponse.fail("文章不存在或已下线", "");
+        }
+        String username = authContext.resolveUsername(request, null);
+        if (username == null) {
+            return ApiResponse.fail("请先登录再点赞", "");
+        }
+        User me = userMapper.selectByUsername(username);
+        if (me == null) {
+            return ApiResponse.fail("登录状态异常，请重新登录", "");
+        }
+
+        boolean liked = postLikeMapper.existsByUserAndPost(me.getId(), id) > 0;
+        if (liked) {
+            postLikeMapper.deleteByUserAndPost(me.getId(), id);
+            postMapper.decrementLikeCount(id);
+        } else {
+            PostLike like = new PostLike();
+            like.setPostId(id);
+            like.setUserId(me.getId());
+            like.setCreatedAt(LocalDateTime.now());
+            try {
+                postLikeMapper.insert(like);
+                postMapper.incrementLikeCount(id);
+            } catch (DuplicateKeyException e) {
+                // 极端并发下同一秒点两次：唯一索引兜住，当作已点赞处理即可
+                return ApiResponse.fail("已经赞过了", "");
+            }
+        }
+        Post fresh = postMapper.selectById(id);
+        long count = fresh == null || fresh.getLikeCount() == null ? 0 : fresh.getLikeCount();
+        return ApiResponse.ok(new LikeStatusVO(!liked, count));
+    }
+
+    /** 点赞状态查询：GET /api/blog/posts/{id}/like，匿名可查（liked 恒为 false），详情页进页面时拉一次 */
+    @GetMapping("/posts/{id}/like")
+    public ApiResponse<LikeStatusVO> likeStatus(@PathVariable Long id, HttpServletRequest request) {
+        Post post = postMapper.selectById(id);
+        if (post == null) {
+            return ApiResponse.fail("文章不存在", "");
+        }
+        boolean liked = false;
+        String username = authContext.resolveUsername(request, null);
+        if (username != null) {
+            User me = userMapper.selectByUsername(username);
+            if (me != null) {
+                liked = postLikeMapper.existsByUserAndPost(me.getId(), id) > 0;
+            }
+        }
+        long count = post.getLikeCount() == null ? 0 : post.getLikeCount();
+        return ApiResponse.ok(new LikeStatusVO(liked, count));
+    }
+
+    /** 友情链接：GET /api/blog/links，公开 */
+    @GetMapping("/links")
+    public ApiResponse<List<Link>> links() {
+        return ApiResponse.ok(linkMapper.selectAllOrdered());
     }
 
     /** 取真实客户端 IP：开发环境直连就是 127.0.0.1，上了 Nginx 才需要看 X-Forwarded-For */

@@ -99,6 +99,12 @@
 			<artifactId>spring-security-crypto</artifactId>
 		</dependency>
 
+		<!-- ===== 评论邮件通知：Spring Mail（发信账号见 application-dev.properties，默认关） ===== -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 		<!-- ===== Markdown 渲染：文章在服务端渲染成 HTML 再入库 ===== -->
 		<dependency>
 			<groupId>org.commonmark</groupId>

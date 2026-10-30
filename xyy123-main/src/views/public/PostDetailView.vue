@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import hljs from 'highlight.js/lib/common'
 import 'highlight.js/styles/atom-one-dark.css'
 import PublicLayout from '../../components/PublicLayout.vue'
-import { addComment, getComments, getPost, getToken } from '../../api'
+import { addComment, getComments, getPost, getToken, likeStatus, toggleLike } from '../../api'
 import { formatDate, fromNow } from '../../utils/format'
 import { SITE } from '../../site.config'
 
@@ -31,6 +31,49 @@ const contentInput = ref(null)
 const logged = ref(!!getToken())
 const accountName = ref(sessionStorage.getItem('username') || '')
 
+// ===== 点赞 =====
+const liked = ref(false)
+const likeCount = ref(0)
+const likeBusy = ref(false)
+
+/** 进页面拉一次状态决定心形亮不亮；未登录也能查总数，只是 liked 恒为 false */
+async function loadLike() {
+  if (!post.value) return
+  const res = await likeStatus(post.value.id)
+  if (res.code === 0) {
+    liked.value = res.data.liked
+    likeCount.value = res.data.likeCount
+  }
+}
+
+/** 切换点赞：乐观更新先改界面，请求失败再回滚并提示 */
+async function doLike() {
+  if (likeBusy.value) return
+  if (!getToken()) {
+    formMsg.value = '登录后才能点赞哦'
+    formMsgType.value = 'error'
+    setTimeout(() => (formMsg.value = ''), 2600)
+    return
+  }
+  likeBusy.value = true
+  const prevLiked = liked.value
+  const prevCount = likeCount.value
+  liked.value = !prevLiked
+  likeCount.value = prevCount + (prevLiked ? -1 : 1)
+  const res = await toggleLike(post.value.id)
+  likeBusy.value = false
+  if (res.code === 0) {
+    liked.value = res.data.liked
+    likeCount.value = res.data.likeCount
+  } else {
+    liked.value = prevLiked
+    likeCount.value = prevCount
+    formMsg.value = res.msg || '点赞失败'
+    formMsgType.value = 'error'
+    setTimeout(() => (formMsg.value = ''), 2600)
+  }
+}
+
 const AVATAR_COLORS = ['#1677ff', '#52c41a', '#ff7a45', '#722ed1', '#eb2f96', '#13c2c2', '#faad14']
 
 /** 昵称 → 固定头像色，同一个人每次进来颜色一致 */
@@ -50,6 +93,7 @@ async function loadPost() {
     await nextTick()
     highlightCode()
     loadComments()
+    loadLike()
   } else {
     error.value = res.msg || '文章不存在'
     post.value = null
@@ -172,6 +216,20 @@ onMounted(loadPost)
           <div class="post-content" v-html="post.contentHtml"></div>
 
           <div class="tb-article-foot">
+            <div class="tb-like-wrap">
+              <button
+                type="button"
+                class="tb-like-btn"
+                :class="{ liked }"
+                :disabled="likeBusy"
+                @click="doLike"
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" :fill="liked ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 20.3 5 13.6a4.6 4.6 0 0 1 0-6.6 4.7 4.7 0 0 1 6.6 0l.4.4.4-.4a4.7 4.7 0 0 1 6.6 0 4.6 4.6 0 0 1 0 6.6z" />
+                </svg>
+                <span>{{ liked ? '已赞' : '点赞' }} · {{ likeCount }}</span>
+              </button>
+            </div>
             <span class="tb-article-sign">{{ SITE.name }} · 转载请注明出处</span>
             <router-link to="/" class="tb-pill tb-pill-ghost">返回列表</router-link>
           </div>

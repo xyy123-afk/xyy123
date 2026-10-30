@@ -2599,3 +2599,118 @@ body[data-section="public"] a {
   outline: 2px solid var(--tb-blue);
   outline-offset: 2px;
 }
+
+/* ---------- 文章点赞 ---------- */
+
+/* 底部一排三项：点赞 | 落款 | 返回列表，落款居中不挤 */
+.tb-like-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.tb-like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--tb-line-strong);
+  background: var(--tb-surface-2);
+  color: var(--tb-text-2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.1s;
+}
+
+.tb-like-btn:hover {
+  color: #ff8fa3;
+  border-color: #ff8fa3;
+}
+
+.tb-like-btn:active {
+  transform: scale(0.96);
+}
+
+/* 已赞态：实心红心 + 淡红底，一眼分清 */
+.tb-like-btn.liked {
+  color: #ff6b81;
+  border-color: rgba(255, 107, 129, 0.5);
+  background: rgba(255, 107, 129, 0.1);
+}
+
+.tb-like-btn:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* ---------- 友链页 ---------- */
+
+.tb-links-panel {
+  padding: 20px 24px 24px;
+}
+
+.tb-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.tb-link-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--tb-radius);
+  background: var(--tb-surface-2);
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.tb-link-card:hover {
+  background: var(--tb-card);
+  border-color: var(--tb-line-strong);
+  transform: translateY(-2px);
+}
+
+.tb-link-avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.tb-link-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-link-name {
+  color: var(--tb-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tb-link-desc {
+  color: var(--tb-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tb-link-host {
+  color: var(--tb-text-2);
+  font-size: 12px;
+  opacity: 0.75;
+}

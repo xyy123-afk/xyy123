@@ -5,9 +5,11 @@ import com.fenglin.springboottest.common.ApiResponse;
 import com.fenglin.springboottest.dto.CategoryVO;
 import com.fenglin.springboottest.dto.TagVO;
 import com.fenglin.springboottest.entity.Category;
+import com.fenglin.springboottest.entity.Link;
 import com.fenglin.springboottest.entity.Post;
 import com.fenglin.springboottest.entity.Tag;
 import com.fenglin.springboottest.mapper.CategoryMapper;
+import com.fenglin.springboottest.mapper.LinkMapper;
 import com.fenglin.springboottest.mapper.PostMapper;
 import com.fenglin.springboottest.mapper.PostTagMapper;
 import com.fenglin.springboottest.mapper.TagMapper;
@@ -38,15 +40,18 @@ public class AdminMetaController {
     private final TagMapper tagMapper;
     private final PostMapper postMapper;
     private final PostTagMapper postTagMapper;
+    private final LinkMapper linkMapper;
 
     public AdminMetaController(CategoryMapper categoryMapper,
                                TagMapper tagMapper,
                                PostMapper postMapper,
-                               PostTagMapper postTagMapper) {
+                               PostTagMapper postTagMapper,
+                               LinkMapper linkMapper) {
         this.categoryMapper = categoryMapper;
         this.tagMapper = tagMapper;
         this.postMapper = postMapper;
         this.postTagMapper = postTagMapper;
+        this.linkMapper = linkMapper;
     }
 
     /* ===================== 分类 ===================== */
@@ -147,6 +152,77 @@ public class AdminMetaController {
         String name = req.getName() == null ? "" : req.getName().trim();
         if (name.isEmpty() || name.length() > 32) {
             return ApiResponse.fail("分类名不能为空且不超过 32 个字", "name");
+        }
+        return null;
+    }
+
+    /* ===================== 友情链接 ===================== */
+
+    @GetMapping("/links")
+    public ApiResponse<List<Link>> listLinks() {
+        return ApiResponse.ok(linkMapper.selectAllOrdered());
+    }
+
+    @PostMapping("/links")
+    public ApiResponse<Link> addLink(@RequestBody Link req) {
+        ApiResponse<Link> invalid = validateLink(req);
+        if (invalid != null) {
+            return invalid;
+        }
+        Link l = new Link();
+        l.setName(req.getName().trim());
+        l.setUrl(req.getUrl().trim());
+        l.setDescription(req.getDescription() == null ? null : req.getDescription().trim());
+        l.setSortOrder(req.getSortOrder() == null ? 0 : req.getSortOrder());
+        l.setCreatedAt(LocalDateTime.now());
+        linkMapper.insert(l);
+        return ApiResponse.ok(l);
+    }
+
+    @PutMapping("/links/{id}")
+    public ApiResponse<Link> updateLink(@PathVariable Long id, @RequestBody Link req) {
+        Link l = linkMapper.selectById(id);
+        if (l == null) {
+            return ApiResponse.fail("友链不存在", "");
+        }
+        ApiResponse<Link> invalid = validateLink(req);
+        if (invalid != null) {
+            return invalid;
+        }
+        l.setName(req.getName().trim());
+        l.setUrl(req.getUrl().trim());
+        l.setDescription(req.getDescription() == null ? null : req.getDescription().trim());
+        if (req.getSortOrder() != null) {
+            l.setSortOrder(req.getSortOrder());
+        }
+        linkMapper.updateById(l);
+        return ApiResponse.ok(l);
+    }
+
+    @DeleteMapping("/links/{id}")
+    public ApiResponse<Void> deleteLink(@PathVariable Long id) {
+        if (linkMapper.selectById(id) == null) {
+            return ApiResponse.fail("友链不存在", "");
+        }
+        linkMapper.deleteById(id);
+        return ApiResponse.ok(null);
+    }
+
+    /** 友链校验：名称必有 + URL 必须是 http(s) 完整地址（存进去就是要直接 <a href> 的） */
+    private ApiResponse<Link> validateLink(Link req) {
+        String name = req.getName() == null ? "" : req.getName().trim();
+        String url = req.getUrl() == null ? "" : req.getUrl().trim();
+        if (name.isEmpty() || name.length() > 32) {
+            return ApiResponse.fail("站点名不能为空且不超过 32 个字", "name");
+        }
+        if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+            return ApiResponse.fail("地址必须以 http:// 或 https:// 开头", "url");
+        }
+        if (url.length() > 255) {
+            return ApiResponse.fail("地址过长", "url");
+        }
+        if (req.getDescription() != null && req.getDescription().trim().length() > 100) {
+            return ApiResponse.fail("简介最多 100 个字", "description");
         }
         return null;
     }

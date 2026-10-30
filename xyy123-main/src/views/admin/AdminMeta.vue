@@ -2,16 +2,21 @@
 import { onMounted, ref } from 'vue'
 import {
   adminAddCategory,
+  adminAddLink,
   adminAddTag,
   adminCategories,
   adminDeleteCategory,
+  adminDeleteLink,
   adminDeleteTag,
+  adminLinks,
   adminTags,
-  adminUpdateCategory
+  adminUpdateCategory,
+  adminUpdateLink
 } from '../../api'
 
 const categories = ref([])
 const tags = ref([])
+const links = ref([])
 const loading = ref(true)
 const msg = ref('')
 const msgType = ref('')
@@ -27,6 +32,16 @@ const editingSort = ref('')
 // 新建标签
 const newTagName = ref('')
 
+// 新建友链
+const newLinkName = ref('')
+const newLinkUrl = ref('')
+const newLinkDesc = ref('')
+// 编辑友链
+const editingLinkId = ref(null)
+const editingLinkName = ref('')
+const editingLinkUrl = ref('')
+const editingLinkDesc = ref('')
+
 function tip(text, isError = false) {
   msg.value = text
   msgType.value = isError ? 'is-error' : ''
@@ -35,9 +50,10 @@ function tip(text, isError = false) {
 
 async function load() {
   loading.value = true
-  const [c, t] = await Promise.all([adminCategories(), adminTags()])
+  const [c, t, l] = await Promise.all([adminCategories(), adminTags(), adminLinks()])
   if (c.code === 0) categories.value = c.data || []
   if (t.code === 0) tags.value = t.data || []
+  if (l.code === 0) links.value = l.data || []
   loading.value = false
 }
 
@@ -215,6 +231,74 @@ onMounted(load)
       <div class="adm-toolbar" style="margin-top: 12px">
         <input v-model="newTagName" class="adm-input" placeholder="新标签名" @keyup.enter="addTag" />
         <button class="btn btn-primary" @click="addTag">添加标签</button>
+      </div>
+
+      <h2 style="font-size: 15px; color: var(--tb-text); margin: 30px 0 12px">友情链接</h2>
+
+      <table class="adm-table">
+        <thead>
+          <tr>
+            <th>站点名</th>
+            <th>地址</th>
+            <th>简介</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="l in links" :key="l.id">
+            <td>
+              <input
+                v-if="editingLinkId === l.id"
+                v-model="editingLinkName"
+                class="adm-input"
+                style="max-width: 140px"
+              />
+              <span v-else>{{ l.name }}</span>
+            </td>
+            <td>
+              <input
+                v-if="editingLinkId === l.id"
+                v-model="editingLinkUrl"
+                class="adm-input"
+                style="max-width: 220px"
+              />
+              <a v-else :href="l.url" target="_blank" rel="noopener noreferrer" style="color: var(--tb-blue)">
+                {{ l.url }}
+              </a>
+            </td>
+            <td>
+              <input
+                v-if="editingLinkId === l.id"
+                v-model="editingLinkDesc"
+                class="adm-input"
+                style="max-width: 200px"
+              />
+              <span v-else style="color: var(--tb-muted)">{{ l.description || '—' }}</span>
+            </td>
+            <td>
+              <div class="adm-actions">
+                <template v-if="editingLinkId === l.id">
+                  <button class="btn btn-sm btn-primary" @click="saveEditLink(l)">保存</button>
+                  <button class="btn btn-sm" @click="cancelEditLink">取消</button>
+                </template>
+                <template v-else>
+                  <button class="btn btn-sm" @click="startEditLink(l)">编辑</button>
+                  <button class="btn btn-sm btn-danger" @click="removeLink(l)">删除</button>
+                </template>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="!links.length">
+            <td colspan="4" class="adm-empty">还没有友链</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="adm-toolbar" style="margin-top: 12px">
+        <input v-model="newLinkName" class="adm-input" placeholder="站点名" style="max-width: 140px" @keyup.enter="addLink" />
+        <input v-model="newLinkUrl" class="adm-input" placeholder="https:// 开头的完整地址" style="max-width: 240px" @keyup.enter="addLink" />
+        <input v-model="newLinkDesc" class="adm-input" placeholder="一句话简介（可选）" style="max-width: 200px" @keyup.enter="addLink" />
+        <button class="btn btn-primary" @click="addLink">添加友链</button>
       </div>
 
       <p v-if="msg" class="adm-hint" :class="msgType">{{ msg }}</p>

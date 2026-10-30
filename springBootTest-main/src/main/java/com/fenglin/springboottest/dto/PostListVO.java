@@ -12,6 +12,7 @@ public record PostListVO(
         String cover,
         Boolean isTop,
         Integer viewCount,
+        Integer likeCount,
         Long categoryId,
         String categoryName,
         List<String> tags,

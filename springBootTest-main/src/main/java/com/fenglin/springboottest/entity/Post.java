@@ -48,6 +48,10 @@ public class Post {
     @TableField("view_count")
     private Integer viewCount;
 
+    /** 点赞数（冗余列，实际记录在 post_likes 表，增删时同步加减） */
+    @TableField("like_count")
+    private Integer likeCount;
+
     @TableField("category_id")
     private Long categoryId;
 
@@ -138,6 +142,14 @@ public class Post {
 
     public void setViewCount(Integer viewCount) {
         this.viewCount = viewCount;
+    }
+
+    public Integer getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(Integer likeCount) {
+        this.likeCount = likeCount;
     }
 
     public Long getCategoryId() {

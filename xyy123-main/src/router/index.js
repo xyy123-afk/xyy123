@@ -22,6 +22,7 @@ const router = createRouter({
     { path: '/post/:slug', name: 'post-detail', component: () => import('../views/public/PostDetailView.vue') },
     { path: '/archives', name: 'archives', component: () => import('../views/public/ArchiveView.vue') },
     { path: '/categories', name: 'categories', component: () => import('../views/public/CategoriesView.vue') },
+    { path: '/links', name: 'links', component: () => import('../views/public/LinksView.vue') },
     { path: '/tag/:id', name: 'tag-posts', component: () => import('../views/public/TagPostsView.vue') },
 
     // ===== 登录 =====

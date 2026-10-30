@@ -106,6 +106,23 @@ onMounted(async () => {
       </form>
 
       <div class="tb-header-actions">
+        <!-- 日间/夜间切换：月亮=当前夜间（点击去日间），太阳=当前日间 -->
+        <button
+          type="button"
+          class="tb-icon-btn"
+          :aria-label="isDark ? '切换到日间模式' : '切换到夜间模式'"
+          :title="isDark ? '日间模式' : '夜间模式'"
+          @click="switchTheme"
+        >
+          <svg v-if="isDark" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4" />
+          </svg>
+          <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z" />
+          </svg>
+        </button>
+
         <!-- 后台管理：专属登录入口（仅登录、无注册），点击进入站长后台 -->
         <router-link to="/admin/login" class="tb-pill tb-pill-ghost tb-pill-admin">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -159,6 +176,13 @@ onMounted(async () => {
             <rect x="13" y="13" width="7" height="7" rx="1.6" />
           </svg>
           分类
+        </router-link>
+        <router-link to="/links" class="tb-side-item" :class="{ active: isActive('/links') }">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 14a4.5 4.5 0 0 0 6.4.4l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.7 1.7" />
+            <path d="M14 10a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.7-1.7" />
+          </svg>
+          友链
         </router-link>
         <router-link v-if="logged" to="/chat" class="tb-side-item" :class="{ active: isActive('/chat') }">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">

@@ -1,17 +1,17 @@
 /*
  Navicat Premium Dump SQL
 
- Source Server         : test
+ Source Server         : localhost_3306
  Source Server Type    : MySQL
- Source Server Version : 80039 (8.0.39)
+ Source Server Version : 80046 (8.0.46)
  Source Host           : localhost:3306
  Source Schema         : xyy_login
 
  Target Server Type    : MySQL
- Target Server Version : 80039 (8.0.39)
+ Target Server Version : 80046 (8.0.46)
  File Encoding         : 65001
 
- Date: 29/10/2026 15:09:04
+ Date: 30/10/2026 09:53:32
 */
 
 SET NAMES utf8mb4;
@@ -30,7 +30,7 @@ CREATE TABLE `categories`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_categories_name`(`name` ASC) USING BTREE,
   UNIQUE INDEX `uk_categories_slug`(`slug` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章分类表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章分类表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of categories
@@ -56,11 +56,12 @@ CREATE TABLE `comments`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_comments_post`(`post_id` ASC, `status` ASC) USING BTREE,
   INDEX `idx_comments_parent`(`parent_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章评论表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章评论表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of comments
 -- ----------------------------
+INSERT INTO `comments` VALUES (1, 1, NULL, NULL, 'tester', NULL, 'smoke test comment', 1, '2026-10-30 09:51:05');
 
 -- ----------------------------
 -- Table structure for conversations
@@ -80,7 +81,7 @@ CREATE TABLE `conversations`  (
   UNIQUE INDEX `uk_conv_pair`(`user_a_id` ASC, `user_b_id` ASC) USING BTREE COMMENT '同一对用户只有一条会话',
   INDEX `idx_conv_a`(`user_a_id` ASC, `last_message_at` ASC) USING BTREE,
   INDEX `idx_conv_b`(`user_b_id` ASC, `last_message_at` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信会话表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信会话表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of conversations
@@ -88,6 +89,25 @@ CREATE TABLE `conversations`  (
 INSERT INTO `conversations` VALUES (1, 1, 4, '😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭', '2026-10-29 14:35:57', 0, 2, '2026-10-29 14:09:51', '2026-10-29 14:35:57');
 INSERT INTO `conversations` VALUES (2, 4, 8, '知道就好', '2026-10-29 14:27:55', 0, 0, '2026-10-29 14:26:29', '2026-10-29 14:28:09');
 INSERT INTO `conversations` VALUES (3, 1, 2, '[表情包]', '2026-10-29 14:50:32', 0, 2, '2026-10-29 14:46:36', '2026-10-29 14:50:31');
+
+-- ----------------------------
+-- Table structure for links
+-- ----------------------------
+DROP TABLE IF EXISTS `links`;
+CREATE TABLE `links`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
+  `name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '站点名',
+  `url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '站点地址，http(s):// 开头',
+  `description` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '一句话简介，可空',
+  `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序，越小越靠前',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '友情链接表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of links
+-- ----------------------------
+INSERT INTO `links` VALUES (2, '云上小栈', 'https://blog.example.cn', '一个朋友的博客', 1, '2026-10-30 09:50:52');
 
 -- ----------------------------
 -- Table structure for messages
@@ -105,7 +125,7 @@ CREATE TABLE `messages`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_msg_conv`(`conversation_id` ASC, `id` ASC) USING BTREE COMMENT '按会话取历史消息',
   INDEX `idx_msg_sender`(`sender_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信消息表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 16 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信消息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of messages
@@ -127,6 +147,24 @@ INSERT INTO `messages` VALUES (14, 3, 1, '/uploads/2026-10/602d7c9aef8c4d319782e
 INSERT INTO `messages` VALUES (15, 3, 1, '/uploads/2026-10/26bae7e64cc24ecfb0a5e4b98c0b179a.jpg', 'sticker', 0, 0, '2026-10-29 14:50:32');
 
 -- ----------------------------
+-- Table structure for post_likes
+-- ----------------------------
+DROP TABLE IF EXISTS `post_likes`;
+CREATE TABLE `post_likes`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
+  `post_id` bigint UNSIGNED NOT NULL COMMENT '文章 id',
+  `user_id` bigint UNSIGNED NOT NULL COMMENT '点赞用户 id，逻辑关联 users.id',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_like_user_post`(`user_id` ASC, `post_id` ASC) USING BTREE COMMENT '一人一篇只能赞一次',
+  INDEX `idx_like_post`(`post_id` ASC) USING BTREE COMMENT '按文章统计点赞数'
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章点赞表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of post_likes
+-- ----------------------------
+
+-- ----------------------------
 -- Table structure for post_tags
 -- ----------------------------
 DROP TABLE IF EXISTS `post_tags`;
@@ -135,7 +173,7 @@ CREATE TABLE `post_tags`  (
   `tag_id` bigint UNSIGNED NOT NULL COMMENT '标签 id',
   PRIMARY KEY (`post_id`, `tag_id`) USING BTREE,
   INDEX `idx_post_tags_tag`(`tag_id` ASC) USING BTREE COMMENT '按标签反查文章'
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章与标签的多对多关联' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章与标签的多对多关联' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of post_tags
@@ -158,6 +196,7 @@ CREATE TABLE `posts`  (
   `status` tinyint NOT NULL DEFAULT 0 COMMENT '0 草稿，1 已发布',
   `is_top` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否置顶',
   `view_count` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '阅读数',
+  `like_count` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '点赞数（冗余，与 post_likes 表保持一致）',
   `category_id` bigint UNSIGNED NULL DEFAULT NULL COMMENT '分类 id，逻辑关联 categories.id',
   `published_at` datetime NULL DEFAULT NULL COMMENT '发布时间，草稿为空',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -166,12 +205,12 @@ CREATE TABLE `posts`  (
   UNIQUE INDEX `uk_posts_slug`(`slug` ASC) USING BTREE COMMENT 'slug 唯一，可直接当 URL',
   INDEX `idx_posts_list`(`status` ASC, `published_at` ASC) USING BTREE COMMENT '首页按状态+发布时间倒序',
   INDEX `idx_posts_category`(`category_id` ASC) USING BTREE COMMENT '按分类筛选'
-) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of posts
 -- ----------------------------
-INSERT INTO `posts` VALUES (1, '博客开张：从待办清单到个人博客', 'hello-blog', '这个项目原本是一个登录 + 待办清单的练手 demo，现在改成了单作者博客：前台公开阅读，后台 Markdown 写作。', '# 博客开张\n\n这个项目原本是「登录 + 待办清单」的练手 demo，现在改成了单作者博客：\n\n- **前台**公开阅读，不需要登录\n- **后台**用 Markdown 写作，带实时预览\n- 支持分类、标签、归档、搜索、评论\n\n## 一段代码\n\n```java\n@GetMapping(\"/api/blog/posts\")\npublic ApiResponse<PageResult<PostListVO>> list(...) {\n    return ApiResponse.ok(...);\n}\n```\n\n## 下一步\n\n进 [/admin](/admin) 写你自己的第一篇。\n', '<h1>博客开张</h1><p>这个项目原本是「登录 + 待办清单」的练手 demo，现在改成了单作者博客：</p><ul><li><strong>前台</strong>公开阅读，不需要登录</li><li><strong>后台</strong>用 Markdown 写作，带实时预览</li><li>支持分类、标签、归档、搜索、评论</li></ul><h2>一段代码</h2><pre><code class=\"language-java\">@GetMapping(&quot;/api/blog/posts&quot;)\npublic ApiResponse&lt;PageResult&lt;PostListVO&gt;&gt; list(...) {\n    return ApiResponse.ok(...);\n}\n</code></pre><h2>下一步</h2><p>进 <a href=\"/admin\">/admin</a> 写你自己的第一篇。</p>', NULL, 1, 1, 0, 1, '2026-10-29 14:08:51', '2026-10-29 14:08:51', '2026-10-29 14:08:51');
+INSERT INTO `posts` VALUES (1, '博客开张：从待办清单到个人博客', 'hello-blog', '这个项目原本是一个登录 + 待办清单的练手 demo，现在改成了单作者博客：前台公开阅读，后台 Markdown 写作。', '# 博客开张\n\n这个项目原本是「登录 + 待办清单」的练手 demo，现在改成了单作者博客：\n\n- **前台**公开阅读，不需要登录\n- **后台**用 Markdown 写作，带实时预览\n- 支持分类、标签、归档、搜索、评论\n\n## 一段代码\n\n```java\n@GetMapping(\"/api/blog/posts\")\npublic ApiResponse<PageResult<PostListVO>> list(...) {\n    return ApiResponse.ok(...);\n}\n```\n\n## 下一步\n\n进 [/admin](/admin) 写你自己的第一篇。\n', '<h1>博客开张</h1><p>这个项目原本是「登录 + 待办清单」的练手 demo，现在改成了单作者博客：</p><ul><li><strong>前台</strong>公开阅读，不需要登录</li><li><strong>后台</strong>用 Markdown 写作，带实时预览</li><li>支持分类、标签、归档、搜索、评论</li></ul><h2>一段代码</h2><pre><code class=\"language-java\">@GetMapping(&quot;/api/blog/posts&quot;)\npublic ApiResponse&lt;PageResult&lt;PostListVO&gt;&gt; list(...) {\n    return ApiResponse.ok(...);\n}\n</code></pre><h2>下一步</h2><p>进 <a href=\"/admin\">/admin</a> 写你自己的第一篇。</p>', NULL, 1, 1, 0, 0, 1, '2026-10-29 14:08:51', '2026-10-29 14:08:51', '2026-10-30 09:50:21');
 
 -- ----------------------------
 -- Table structure for site_settings
@@ -186,7 +225,7 @@ CREATE TABLE `site_settings`  (
   `since_year` int NULL DEFAULT NULL COMMENT '寤虹珯骞翠唤锛岄〉鑴?漏 鐢',
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '鏇存柊鏃堕棿',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '绔欑偣璁剧疆锛堝崟琛岃〃锛宨d 鎭掍负 1锛' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 2 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '绔欑偣璁剧疆锛堝崟琛岃〃锛宨d 鎭掍负 1锛' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of site_settings
@@ -205,7 +244,7 @@ CREATE TABLE `stickers`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_sticker_user`(`user_id` ASC, `id` ASC) USING BTREE COMMENT '按用户取收藏列表'
-) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '表情包收藏表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '表情包收藏表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of stickers
@@ -223,7 +262,7 @@ CREATE TABLE `tags`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_tags_name`(`name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章标签表' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章标签表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tags
@@ -247,7 +286,7 @@ CREATE TABLE `users`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_users_username`(`username` ASC) USING BTREE COMMENT '用户名唯一'
-) ENGINE = InnoDB AUTO_INCREMENT = 9 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表（单作者博客，只放站长账号）' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表（单作者博客，只放站长账号）' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of users

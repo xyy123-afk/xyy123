@@ -48,6 +48,12 @@ const visibleTags = computed(() => (props.post.tags || []).slice(0, 2))
           </svg>
           {{ post.viewCount || 0 }}
         </span>
+        <span class="tb-action">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20.3 5 13.6a4.6 4.6 0 0 1 0-6.6 4.7 4.7 0 0 1 6.6 0l.4.4.4-.4a4.7 4.7 0 0 1 6.6 0 4.6 4.6 0 0 1 0 6.6z" />
+          </svg>
+          {{ post.likeCount || 0 }}
+        </span>
         <router-link :to="link" class="tb-action tb-action-link">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 12a7.5 7.5 0 0 1-7.5 7.5H8L4 22l1-4.2A7.5 7.5 0 1 1 20 12z" />

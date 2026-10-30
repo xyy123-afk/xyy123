@@ -149,6 +149,41 @@ export function addComment(postId, payload) {
   return send('POST', `/blog/posts/${postId}/comments`, payload)
 }
 
+/* ===================== 点赞（登录才能赞，状态可匿名查） ===================== */
+
+/** 当前文章的点赞状态：{ liked, likeCount }，未登录时 liked 恒为 false */
+export function likeStatus(postId) {
+  return send('GET', `/blog/posts/${postId}/like`)
+}
+
+/** 点赞 / 取消点赞（后端切换式），返回最新 { liked, likeCount } */
+export function toggleLike(postId) {
+  return send('POST', `/blog/posts/${postId}/like`)
+}
+
+/* ===================== 友情链接 ===================== */
+
+/** 前台友链页（公开） */
+export function getLinks() {
+  return send('GET', '/blog/links')
+}
+
+export function adminLinks() {
+  return send('GET', '/admin/links')
+}
+
+export function adminAddLink(payload) {
+  return send('POST', '/admin/links', payload)
+}
+
+export function adminUpdateLink(id, payload) {
+  return send('PUT', `/admin/links/${id}`, payload)
+}
+
+export function adminDeleteLink(id) {
+  return send('DELETE', `/admin/links/${id}`)
+}
+
 /* ===================== 私信（需登录，任何账号都能用） ===================== */
 
 export function chatConversations() {

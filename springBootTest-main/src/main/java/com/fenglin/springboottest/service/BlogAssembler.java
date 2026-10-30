@@ -94,7 +94,7 @@ public class BlogAssembler {
     public PostListVO toListVO(Post p, Map<Long, String> categoryNames, Map<Long, List<String>> tagNames) {
         return new PostListVO(
                 p.getId(), p.getTitle(), p.getSlug(), p.getSummary(), p.getCover(),
-                Boolean.TRUE.equals(p.getIsTop()), p.getViewCount(),
+                Boolean.TRUE.equals(p.getIsTop()), p.getViewCount(), p.getLikeCount(),
                 p.getCategoryId(), categoryNames.get(p.getCategoryId()),
                 tagNames.getOrDefault(p.getId(), List.of()),
                 p.getPublishedAt());
@@ -109,7 +109,7 @@ public class BlogAssembler {
     public PostDetailVO toDetailVO(Post p) {
         return new PostDetailVO(
                 p.getId(), p.getTitle(), p.getSlug(), p.getSummary(), p.getCover(),
-                p.getViewCount(), p.getCategoryId(), categoryNameMap().get(p.getCategoryId()),
+                p.getViewCount(), p.getLikeCount(), p.getCategoryId(), categoryNameMap().get(p.getCategoryId()),
                 tagNames(p.getId()), p.getContentHtml(),
                 p.getPublishedAt(), p.getCreatedAt(), p.getUpdatedAt());
     }

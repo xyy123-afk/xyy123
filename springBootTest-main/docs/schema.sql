@@ -238,6 +238,48 @@ CREATE TABLE IF NOT EXISTS site_settings (
   COLLATE = utf8mb4_unicode_ci
   COMMENT = '站点设置（单行表，id 恒为 1）';
 
+-- ---------- 7.6 文章点赞 ----------
+-- 点赞必须登录（user_id 不可空），同一用户对同一篇文章只能点一次：
+-- (user_id, post_id) 复合唯一索引兜底，代码层先查一次，并发下由索引挡重复。
+CREATE TABLE IF NOT EXISTS post_likes (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
+  post_id     BIGINT UNSIGNED NOT NULL                COMMENT '文章 id',
+  user_id     BIGINT UNSIGNED NOT NULL                COMMENT '点赞用户 id，逻辑关联 users.id',
+  created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_like_user_post (user_id, post_id)      COMMENT '一人一篇只能赞一次',
+  KEY idx_like_post (post_id)                          COMMENT '按文章统计点赞数'
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT = '文章点赞表';
+
+-- 老库升级：posts 补 like_count 冗余列（列表页直接展示，不用每次 count 点赞表）
+SET @exist_like := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = 'xyy_login' AND TABLE_NAME = 'posts' AND COLUMN_NAME = 'like_count'
+);
+SET @sql_like := IF(@exist_like = 0,
+  'ALTER TABLE posts ADD COLUMN like_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT ''点赞数（冗余，与 post_likes 表保持一致）'' AFTER view_count',
+  'SELECT 1');
+PREPARE stmt_like FROM @sql_like;
+EXECUTE stmt_like;
+DEALLOCATE PREPARE stmt_like;
+
+-- ---------- 7.7 友情链接 ----------
+CREATE TABLE IF NOT EXISTS links (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
+  name        VARCHAR(32)     NOT NULL                COMMENT '站点名',
+  url         VARCHAR(255)    NOT NULL                COMMENT '站点地址，http(s):// 开头',
+  description VARCHAR(100)    NULL                    COMMENT '一句话简介，可空',
+  sort_order  INT             NOT NULL DEFAULT 0      COMMENT '排序，越小越靠前',
+  created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (id)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT = '友情链接表';
+
 -- ---------- 8. 清理旧业务表（Todo 已下线，全库已备份） ----------
 DROP TABLE IF EXISTS todos;
 

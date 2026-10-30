@@ -37,6 +37,39 @@ html {
   --tb-radius: 10px;
 }
 
+/*
+ * 日间模式（只作用于前台，后台保持夜间樱花风）：
+ * 同一组 --tb-* 变量在 html[data-theme="light"] 下换浅色值，组件零改动。
+ * 吧头 tb-banner 是刻意的深色视觉锚点，日间也保持深色（白字直接可用）。
+ * 注意浅底上"悬停变亮"要反转成"变深"，所以 --tb-blue-dark 取更深的一档蓝。
+ */
+html[data-theme="light"] body[data-section="public"] {
+  --tb-bg: #f5f7fb;
+  --tb-card: #ffffff;
+  --tb-surface-2: #eef1f6;
+  --tb-surface-3: #e7ebf2;
+  --tb-code-bg: #0a0d12;
+  --tb-text: #1f2530;
+  --tb-text-2: #454f61;
+  --tb-muted: #7b8497;
+  --tb-line: #dfe4ec;
+  --tb-line-soft: #e9edf3;
+  --tb-line-strong: #c3ccd9;
+  --tb-blue: #3a6ff2;
+  --tb-blue-dark: #2b5ae0;
+  --tb-blue-soft: rgba(58, 111, 242, 0.1);
+  --tb-header-bg: rgba(245, 247, 251, 0.86);
+  /* 顶部冷光换成更淡的版本，浅底上不会发灰 */
+  background-image:
+    radial-gradient(900px 480px at 50% -12%, rgba(58, 111, 242, 0.07), transparent 70%),
+    radial-gradient(720px 420px at 100% 0%, rgba(122, 92, 255, 0.05), transparent 70%);
+}
+
+/* 浅底上淡蓝粒子几乎不可见，压低存在感，保持页面干净 */
+html[data-theme="light"] .tb-particles {
+  opacity: 0.35;
+}
+
 body {
   min-height: 100vh;
   min-height: 100dvh;
