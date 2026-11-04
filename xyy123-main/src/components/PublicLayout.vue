@@ -96,6 +96,44 @@ function onSpotMove(e) {
 
 onMounted(() => window.addEventListener('pointermove', onSpotMove, { passive: true }))
 onBeforeUnmount(() => window.removeEventListener('pointermove', onSpotMove))
+
+// ===== 聚光灯样式切换 =====
+// 顶栏弹窗里选一个样式，写进 <html data-spot="...">，style-blog.css 按它换画法。
+// soft 是默认（不加属性），选择存在 localStorage 里，下次打开还是上回挑的。
+const SPOT_STYLES = [
+  { value: 'soft', label: '柔光', desc: '跟着指针走的柔光' },
+  { value: 'ring', label: '光环', desc: '一圈涟漪般的细描边' },
+  { value: 'rainbow', label: '流光', desc: '指针周围的彩虹渐变' },
+  { value: 'dot', label: '星点', desc: '一颗亮芯加小圈柔晕' },
+  { value: 'off', label: '关闭', desc: '不要特效' }
+]
+const SPOT_KEY = 'tb-spot-style'
+const spotStyle = ref(localStorage.getItem(SPOT_KEY) || 'soft')
+const spotOpen = ref(false)
+
+function applySpot(v) {
+  if (v === 'soft') document.documentElement.removeAttribute('data-spot')
+  else document.documentElement.setAttribute('data-spot', v)
+}
+
+function pickSpot(v) {
+  spotStyle.value = v
+  localStorage.setItem(SPOT_KEY, v)
+  spotOpen.value = false
+}
+
+watch(spotStyle, applySpot)
+
+// 点弹窗外任意处收起
+function onSpotDocClick(e) {
+  if (!e.target.closest || !e.target.closest('.tb-spot-picker')) spotOpen.value = false
+}
+
+onMounted(() => {
+  applySpot(spotStyle.value)
+  document.addEventListener('click', onSpotDocClick)
+})
+onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
 </script>
 
 <template>
@@ -128,6 +166,39 @@ onBeforeUnmount(() => window.removeEventListener('pointermove', onSpotMove))
       </form>
 
       <div class="tb-header-actions">
+        <!-- 鼠标特效样式切换：五种画法存 localStorage，全站卡片即时生效 -->
+        <div class="tb-spot-picker">
+          <button
+            type="button"
+            class="tb-icon-btn"
+            :class="{ 'tb-spot-active': spotStyle !== 'soft' && spotStyle !== 'off' }"
+            aria-label="切换鼠标特效样式"
+            title="鼠标特效"
+            @click.stop="spotOpen = !spotOpen"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z" />
+              <path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" />
+            </svg>
+          </button>
+          <div v-if="spotOpen" class="tb-spot-menu">
+            <button
+              v-for="s in SPOT_STYLES"
+              :key="s.value"
+              type="button"
+              class="tb-spot-opt"
+              :class="{ active: spotStyle === s.value }"
+              @click="pickSpot(s.value)"
+            >
+              <span class="tb-spot-label">{{ s.label }}</span>
+              <span class="tb-spot-desc">{{ s.desc }}</span>
+              <svg v-if="spotStyle === s.value" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m5 13 4 4L19 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
         <!-- 日间/夜间切换：图标表示「点下去会切到哪个模式」
              夜间 → 显示太阳（点了进日间）；日间 → 显示月亮（点了进夜间） -->
         <button
