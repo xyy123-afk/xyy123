@@ -210,7 +210,7 @@ DEALLOCATE PREPARE stmt_type;
 CREATE TABLE IF NOT EXISTS stickers (
   id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
   user_id     BIGINT UNSIGNED NOT NULL                COMMENT '收藏者账号 id，逻辑关联 users.id',
-  url         VARCHAR(255)     NOT NULL               COMMENT '图片地址（本站 /uploads/ 下的相对路径）',
+  url         VARCHAR(255)     NOT NULL               COMMENT '图片地址（本站 /api/images/{id}，旧数据可能是 /uploads/...）',
   name        VARCHAR(64)      NULL                   COMMENT '备注名，hover 提示用，可为空',
   created_at  DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
   PRIMARY KEY (id),
@@ -279,6 +279,42 @@ CREATE TABLE IF NOT EXISTS links (
   DEFAULT CHARSET = utf8mb4
   COLLATE = utf8mb4_unicode_ci
   COMMENT = '友情链接表';
+
+-- ---------- 7.8 图片文件（头像 / 表情包 / 文章图片，二进制存库） ----------
+-- 以前图片落在项目根 uploads/ 目录里，备份数据库不会带走图片，换机器部署也容易丢。
+-- 现在图片本体存这里，users.avatar / stickers.url / 消息里的图片地址统一改成
+-- /api/images/{id}；接口返回的 URL 由后端给，前端零改动。
+-- LONGBLOB 单条最大 4GB，项目上传上限 10MB，绰绰有余。
+-- 注意：读图接口 /api/images/** 必须匿名可读（<img> 不带 token），所以不挂任何拦截器。
+CREATE TABLE IF NOT EXISTS images (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增，URL 里用它',
+  content_type  VARCHAR(64)     NOT NULL                COMMENT 'MIME，如 image/png，读图时原样回给浏览器',
+  file_name     VARCHAR(255)    NULL                    COMMENT '原始文件名，仅备查',
+  content       LONGBLOB        NOT NULL                COMMENT '图片二进制本体',
+  size_bytes    BIGINT UNSIGNED NOT NULL                COMMENT '字节数，便于排查和统计',
+  uploader_id   BIGINT UNSIGNED NULL                    COMMENT '上传者 users.id，可为空（兼容旧数据）',
+  legacy_path   VARCHAR(255)    NULL                    COMMENT '历史 uploads/ 相对路径，迁移去重用；新上传为 NULL',
+  created_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_image_legacy (legacy_path)            COMMENT '同一旧文件只迁移一次，保证幂等',
+  KEY idx_image_uploader (uploader_id, id)            COMMENT '按上传者查自己传过的图'
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT = '图片文件表（二进制存库）';
+
+-- 老库升级：补 legacy_path（早期建的 images 表没有这列）。
+-- 用 information_schema + PREPARE 动态执行，重复跑不会报「列已存在」。
+SET @exist_legacy := (
+  SELECT COUNT(*) FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = 'xyy_login' AND TABLE_NAME = 'images' AND COLUMN_NAME = 'legacy_path'
+);
+SET @sql_legacy := IF(@exist_legacy = 0,
+  'ALTER TABLE images ADD COLUMN legacy_path VARCHAR(255) NULL COMMENT ''历史 uploads/ 相对路径，迁移去重用'' AFTER uploader_id, ADD UNIQUE KEY uk_image_legacy (legacy_path)',
+  'SELECT 1');
+PREPARE stmt_legacy FROM @sql_legacy;
+EXECUTE stmt_legacy;
+DEALLOCATE PREPARE stmt_legacy;
 
 -- ---------- 8. 清理旧业务表（Todo 已下线，全库已备份） ----------
 DROP TABLE IF EXISTS todos;

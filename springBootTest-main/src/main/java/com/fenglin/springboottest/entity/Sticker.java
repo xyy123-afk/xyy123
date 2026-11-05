@@ -22,7 +22,7 @@ public class Sticker {
     @TableField("user_id")
     private Long userId;
 
-    /** 图片地址（本站 /uploads/ 下的相对路径） */
+    /** 图片地址（本站 /api/images/{id}；旧数据可能是 /uploads/...，两种都能显示） */
     @TableField("url")
     private String url;
 

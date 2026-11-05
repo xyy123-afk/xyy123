@@ -412,3 +412,388 @@ body[data-section="admin"] {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- 自定义光标（CursorLayer.vue，前台后台共用） ----------
+ * 顶栏弹窗把模式写到 <html data-cursor="arrow|ring|trail|custom">：
+ *   · CSS 负责藏掉原生光标（输入框保留 text，打字时别抓瞎）
+ *   · 亮芯 / 星屑拖尾由 CursorLayer 用 Canvas 画（形状/大小/颜色/发光走参数）
+ *   · 只有跟随光环用 CSS（.tb-cursor-ring），触屏设备由 JS 判断直接不启用
+ */
+html[data-cursor] * {
+  cursor: none !important;
+}
+
+html[data-cursor] input,
+html[data-cursor] textarea,
+html[data-cursor] [contenteditable] {
+  cursor: text !important;
+}
+
+.tb-cursor-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.tb-cursor-canvas {
+  position: fixed;
+  inset: 0;
+}
+
+/* 光环：ring 预设或自定义 shape=ring 时显示，CursorLayer 每帧插值追赶亮芯，按下收缩 */
+.tb-cursor-ring {
+  position: fixed;
+  top: -18px;
+  left: -18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(130, 170, 255, 0.5);
+  opacity: 0;
+  will-change: transform;
+  animation: tb-cursor-ring-breathe 1.6s ease-in-out infinite;
+}
+
+/* 光环呼吸：由内而外扩散一圈并淡出，循环 */
+@keyframes tb-cursor-ring-breathe {
+  0% {
+    box-shadow: 0 0 0 0 rgba(130, 170, 255, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(130, 170, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(130, 170, 255, 0);
+  }
+}
+
+/* ---------- 背景音乐播放器（BgmPlayer.vue，全站右下角） ----------
+ * 主题跟随 :root 的 --tb-* 变量，日间/夜间/后台自动适配。
+ * 播放逻辑在 utils/bgm.js（audio 单例，切路由不断音），这里只管长相。
+ */
+.tb-bgm {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+/* 悬浮唱片钮：播放时唱片转起来 */
+.tb-bgm-fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--tb-line);
+  background: var(--tb-card);
+  color: var(--tb-text-2);
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  transition: color 0.18s, border-color 0.18s, transform 0.18s;
+}
+
+.tb-bgm-fab:hover {
+  color: var(--tb-blue);
+  border-color: var(--tb-blue);
+  transform: translateY(-2px);
+}
+
+.tb-bgm-fab.spinning {
+  color: var(--tb-blue);
+  border-color: var(--tb-blue);
+}
+
+.tb-bgm-fab.spinning svg {
+  animation: tb-bgm-spin 4.5s linear infinite;
+}
+
+@keyframes tb-bgm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 面板 */
+.tb-bgm-panel {
+  width: 300px;
+  max-width: calc(100vw - 40px);
+  padding: 14px 14px 10px;
+  border-radius: 14px;
+  background: var(--tb-card);
+  border: 1px solid var(--tb-line);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* 面板弹出动画 */
+.tb-bgm-pop-enter-active,
+.tb-bgm-pop-leave-active {
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+.tb-bgm-pop-enter-from,
+.tb-bgm-pop-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.tb-bgm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.tb-bgm-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tb-text);
+  letter-spacing: 0.02em;
+}
+
+.tb-bgm-head-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.tb-bgm-ghost-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--tb-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tb-bgm-ghost-btn:hover {
+  background: var(--tb-surface-2);
+  color: var(--tb-text);
+}
+
+/* 当前曲目 */
+.tb-bgm-now {
+  min-width: 0;
+}
+
+.tb-bgm-now-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tb-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-bgm-now-artist {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--tb-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 进度条与时间 */
+.tb-bgm-progress {
+  margin-top: 10px;
+}
+
+.tb-bgm-times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--tb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 控制行 */
+.tb-bgm-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tb-bgm-ctl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--tb-text-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tb-bgm-ctl:hover {
+  background: var(--tb-surface-2);
+  color: var(--tb-text);
+}
+
+.tb-bgm-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: var(--tb-blue);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(91, 140, 255, 0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.tb-bgm-play:hover {
+  transform: scale(1.05);
+}
+
+/* 音量：图标 + 滑条，滑条占剩余空间 */
+.tb-bgm-volume {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.tb-bgm-mute {
+  width: 26px;
+  height: 26px;
+}
+
+/* 播放列表 */
+.tb-bgm-list {
+  max-height: 208px;
+  overflow-y: auto;
+  margin: 10px -6px 0;
+  padding: 0 6px;
+  list-style: none;
+  border-top: 1px solid var(--tb-line-soft);
+}
+
+.tb-bgm-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.tb-bgm-list-item:hover {
+  background: var(--tb-surface-2);
+}
+
+.tb-bgm-list-item.active {
+  background: var(--tb-blue-soft, rgba(91, 140, 255, 0.14));
+}
+
+.tb-bgm-list-idx {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  font-size: 11.5px;
+  color: var(--tb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tb-bgm-list-item.active .tb-bgm-list-idx {
+  color: var(--tb-blue);
+}
+
+.tb-bgm-list-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--tb-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-bgm-list-item.active .tb-bgm-list-name {
+  color: var(--tb-blue);
+  font-weight: 600;
+}
+
+.tb-bgm-list-artist {
+  flex: none;
+  max-width: 88px;
+  font-size: 11px;
+  color: var(--tb-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-bgm-list-empty {
+  padding: 14px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--tb-muted);
+}
+
+/* range 统一手感：进度条高一点好点，音量条细一点 */
+.tb-bgm-seek,
+.tb-bgm-vol {
+  width: 100%;
+  accent-color: var(--tb-blue);
+  cursor: pointer;
+}
+
+.tb-bgm-seek {
+  height: 16px;
+}
+
+.tb-bgm-vol {
+  width: 64px;
+  height: 14px;
+}
+
+.tb-bgm-seek:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+/* 缓冲中的转圈图标复用旋转动画 */
+.tb-bgm-spin {
+  animation: tb-bgm-spin 0.9s linear infinite;
+}
+
+/* 窄屏：面板贴边、别超出屏幕 */
+@media (max-width: 480px) {
+  .tb-bgm {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .tb-bgm-panel {
+    width: calc(100vw - 24px);
+  }
+}

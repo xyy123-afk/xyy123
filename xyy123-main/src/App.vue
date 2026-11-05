@@ -4,6 +4,8 @@ import { useRoute } from 'vue-router'
 import { startGlobalChat } from './utils/chatBus'
 import { loadSite } from './site.config'
 import { applyTheme } from './utils/theme'
+import CursorLayer from './components/CursorLayer.vue'
+import BgmPlayer from './components/BgmPlayer.vue'
 
 const route = useRoute()
 
@@ -36,4 +38,8 @@ onMounted(() => {
 
 <template>
   <router-view />
+  <!-- 全站自定义光标层：顶栏弹窗切换，选择存 localStorage -->
+  <CursorLayer />
+  <!-- 右下角背景音乐播放器：audio 单例在 utils/bgm.js，切路由不断音 -->
+  <BgmPlayer />
 </template>

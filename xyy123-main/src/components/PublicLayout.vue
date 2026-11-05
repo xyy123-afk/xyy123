@@ -7,6 +7,14 @@ import { loadSiteMeta } from '../utils/siteMeta'
 import { getToken } from '../api'
 import { isDark, toggleTheme } from '../utils/theme'
 import { refreshUnread, startGlobalChat, unreadTotal } from '../utils/chatBus'
+import {
+  CURSOR_PRESETS,
+  cursorMode,
+  cursorConfig,
+  cursorCustomOpen,
+  setCursorMode,
+  updateCursorConfig
+} from '../utils/cursor'
 
 const route = useRoute()
 const router = useRouter()
@@ -124,9 +132,48 @@ function pickSpot(v) {
 
 watch(spotStyle, applySpot)
 
-// 点弹窗外任意处收起
+// ===== 自定义光标 =====
+// 弹窗只改 utils/cursor.js 里的全局状态，App.vue 挂的 CursorLayer 监听它启停动画。
+// 与聚光灯弹窗互斥：打开一个时收起另一个，顶栏不至于叠两个菜单。
+const cursorOpen = ref(false)
+
+// 自定义面板的可用形状（value 与 cursorConfig.shape 对应）
+const CURSOR_SHAPES = [
+  { value: 'arrow', label: '箭头' },
+  { value: 'dot', label: '圆点' },
+  { value: 'cross', label: '十字' },
+  { value: 'ring', label: '圆环' },
+  { value: 'square', label: '方块' }
+]
+
+const CURSOR_COLORS = [
+  '#5b8cff',
+  '#8b7bff',
+  '#c86bff',
+  '#ff5b8c',
+  '#ff8c5b',
+  '#3ddc97',
+  '#ffffff',
+  '#f0ad4e'
+]
+
+function pickCursor(v) {
+  setCursorMode(v)
+  // 点预设直接切换并收起弹窗；点自定义才展开参数面板
+  if (v === 'custom') {
+    cursorCustomOpen.value = true
+  } else {
+    cursorCustomOpen.value = false
+    cursorOpen.value = false
+  }
+}
+
+// 点弹窗外任意处收起（两个弹窗一起判）
 function onSpotDocClick(e) {
-  if (!e.target.closest || !e.target.closest('.tb-spot-picker')) spotOpen.value = false
+  if (!e.target.closest || !e.target.closest('.tb-spot-picker, .tb-cursor-picker')) {
+    spotOpen.value = false
+    cursorOpen.value = false
+  }
 }
 
 onMounted(() => {
@@ -174,7 +221,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
             :class="{ 'tb-spot-active': spotStyle !== 'soft' && spotStyle !== 'off' }"
             aria-label="切换鼠标特效样式"
             title="鼠标特效"
-            @click.stop="spotOpen = !spotOpen"
+            @click.stop="spotOpen = !spotOpen; cursorOpen = false"
           >
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z" />
@@ -196,6 +243,150 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
                 <path d="m5 13 4 4L19 7" />
               </svg>
             </button>
+          </div>
+        </div>
+
+        <!-- 自定义光标切换：改全局状态，CursorLayer（App.vue 挂载）负责真正画光标 -->
+        <div class="tb-cursor-picker">
+          <button
+            type="button"
+            class="tb-icon-btn"
+            :class="{ 'tb-spot-active': cursorMode !== 'system' }"
+            aria-label="切换光标样式"
+            title="光标样式"
+            @click.stop="cursorOpen = !cursorOpen; spotOpen = false"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 3l14 9-6.2 1.4L9.5 19z" />
+              <path d="M9.5 19 8 22" />
+            </svg>
+          </button>
+
+          <div v-if="cursorOpen" class="tb-spot-menu tb-cursor-menu">
+            <!-- 预设 -->
+            <button
+              v-for="c in CURSOR_PRESETS"
+              :key="c.value"
+              type="button"
+              class="tb-spot-opt"
+              :class="{ active: cursorMode === c.value }"
+              @click="pickCursor(c.value)"
+            >
+              <span class="tb-spot-label">{{ c.label }}</span>
+              <span class="tb-spot-desc">{{ c.desc }}</span>
+              <svg v-if="cursorMode === c.value" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m5 13 4 4L19 7" />
+              </svg>
+            </button>
+
+            <!-- 自定义入口 -->
+            <button
+              type="button"
+              class="tb-spot-opt tb-cursor-custom-entry"
+              :class="{ active: cursorMode === 'custom' }"
+              @click="setCursorMode('custom'); cursorCustomOpen = true"
+            >
+              <span class="tb-spot-label">自定义</span>
+              <span class="tb-spot-desc">自己调参数</span>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 13v7M18 4v7M6 4l6 6M18 11l-6 6" />
+                <circle cx="6" cy="10" r="2" />
+                <circle cx="18" cy="14" r="2" />
+              </svg>
+            </button>
+
+            <!-- 自定义参数面板 -->
+            <div v-if="cursorCustomOpen" class="tb-cursor-custom">
+              <div class="tb-cursor-custom-row">
+                <span class="tb-cursor-custom-label">形状</span>
+                <div class="tb-cursor-shapes">
+                  <button
+                    v-for="s in CURSOR_SHAPES"
+                    :key="s.value"
+                    type="button"
+                    class="tb-cursor-shape"
+                    :class="{ active: cursorConfig.shape === s.value }"
+                    :title="s.label"
+                    @click="updateCursorConfig({ shape: s.value })"
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path v-if="s.value === 'arrow'" d="M4 3l15 8-6 1.3L9.5 19z" />
+                      <circle v-else-if="s.value === 'dot'" cx="12" cy="12" r="5" fill="currentColor" stroke="none" />
+                      <path v-else-if="s.value === 'cross'" d="M12 4v16M4 12h16" />
+                      <circle v-else-if="s.value === 'ring'" cx="12" cy="12" r="7" />
+                      <rect v-else x="6" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="tb-cursor-custom-row">
+                <span class="tb-cursor-custom-label">大小</span>
+                <input
+                  type="range"
+                  min="10"
+                  max="48"
+                  step="1"
+                  :value="cursorConfig.size"
+                  @input="updateCursorConfig({ size: Number($event.target.value) })"
+                />
+                <span class="tb-cursor-custom-val">{{ cursorConfig.size }}px</span>
+              </div>
+
+              <div class="tb-cursor-custom-row">
+                <span class="tb-cursor-custom-label">颜色</span>
+                <div class="tb-cursor-colors">
+                  <button
+                    v-for="c in CURSOR_COLORS"
+                    :key="c"
+                    type="button"
+                    class="tb-cursor-color"
+                    :class="{ active: cursorConfig.color === c }"
+                    :style="{ background: c }"
+                    @click="updateCursorConfig({ color: c })"
+                  ></button>
+                </div>
+              </div>
+
+              <div class="tb-cursor-custom-row">
+                <span class="tb-cursor-custom-label">发光</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  :value="cursorConfig.glow"
+                  @input="updateCursorConfig({ glow: Number($event.target.value) })"
+                />
+                <span class="tb-cursor-custom-val">{{ Math.round(cursorConfig.glow * 100) }}%</span>
+              </div>
+
+              <div class="tb-cursor-custom-row">
+                <span class="tb-cursor-custom-label">拖尾</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  :value="cursorConfig.trail"
+                  @input="updateCursorConfig({ trail: Number($event.target.value) })"
+                />
+                <span class="tb-cursor-custom-val">{{ Math.round(cursorConfig.trail * 100) }}%</span>
+              </div>
+
+              <div class="tb-cursor-custom-row">
+                <span class="tb-cursor-custom-label">跟随</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  :value="cursorConfig.follow"
+                  @input="updateCursorConfig({ follow: Number($event.target.value) })"
+                />
+                <span class="tb-cursor-custom-val">{{ Math.round(cursorConfig.follow * 100) }}%</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -254,6 +445,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
             <path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z" />
           </svg>
           首页
+        </router-link>
+        <router-link to="/daily" class="tb-side-item" :class="{ active: isActive('/daily') }">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+            <path d="M8 3v4M16 3v4M3.5 10h17" />
+            <path d="M12 12.8l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z" />
+          </svg>
+          每日推荐
         </router-link>
         <router-link to="/archives" class="tb-side-item" :class="{ active: isActive('/archives') }">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">

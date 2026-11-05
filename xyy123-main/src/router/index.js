@@ -19,6 +19,7 @@ const router = createRouter({
   routes: [
     // ===== 公开站 =====
     { path: '/', name: 'blog-home', component: () => import('../views/public/BlogHomeView.vue') },
+    { path: '/daily', name: 'daily-recommend', component: () => import('../views/public/DailyRecommendView.vue') },
     { path: '/post/:slug', name: 'post-detail', component: () => import('../views/public/PostDetailView.vue') },
     { path: '/archives', name: 'archives', component: () => import('../views/public/ArchiveView.vue') },
     { path: '/categories', name: 'categories', component: () => import('../views/public/CategoriesView.vue') },

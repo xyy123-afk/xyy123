@@ -10,6 +10,7 @@ import com.fenglin.springboottest.dto.UserVO;
 import com.fenglin.springboottest.entity.User;
 import com.fenglin.springboottest.mapper.UserMapper;
 import com.fenglin.springboottest.service.AuthService;
+import com.fenglin.springboottest.util.ImageUrls;
 import com.fenglin.springboottest.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -154,7 +155,7 @@ public class AuthController {
     }
 
     /**
-     * 更新我的头像：{ avatar: "/uploads/..." }，空串表示清除头像。
+     * 更新我的头像：{ avatar: "/api/images/1" }（旧数据 /uploads/... 也认），空串表示清除头像。
      * 只接受本站上传的相对路径，防止存外链钓鱼图。
      * 返回最新资料，前端直接就地刷新，不用再拉一次 /me。
      */
@@ -167,7 +168,7 @@ public class AuthController {
             return ApiResponse.fail("登录已过期，请重新登录", "");
         }
         String avatar = req == null || req.avatar() == null ? "" : req.avatar().trim();
-        if (!avatar.isEmpty() && !avatar.startsWith("/uploads/")) {
+        if (!avatar.isEmpty() && !ImageUrls.isLocal(avatar)) {
             return ApiResponse.fail("头像地址不合法", "");
         }
         User user = userMapper.selectByUsername(username);

@@ -14,6 +14,7 @@ import com.fenglin.springboottest.mapper.ConversationMapper;
 import com.fenglin.springboottest.mapper.MessageMapper;
 import com.fenglin.springboottest.mapper.StickerMapper;
 import com.fenglin.springboottest.mapper.UserMapper;
+import com.fenglin.springboottest.util.ImageUrls;
 import com.fenglin.springboottest.ws.ChatWebSocketHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -151,7 +152,7 @@ public class ChatService {
         if (!"text".equals(type) && !"sticker".equals(type)) {
             throw new IllegalArgumentException("不支持的消息类型");
         }
-        if ("sticker".equals(type) && !content.startsWith("/uploads/")) {
+        if ("sticker".equals(type) && !ImageUrls.isLocal(content)) {
             throw new IllegalArgumentException("表情包必须是本站上传的图片");
         }
 
@@ -212,11 +213,11 @@ public class ChatService {
                 .orderByDesc(Sticker::getId));
     }
 
-    /** 收藏一个表情包：url 必须是本站 /uploads/ 下的图片，防外链钓鱼图 */
+    /** 收藏一个表情包：url 必须是本站图片（/api/images/{id} 或旧 /uploads/），防外链钓鱼图 */
     @Transactional
     public Sticker addSticker(Long meId, StickerAddRequest req) {
         String url = req == null || req.url() == null ? "" : req.url().trim();
-        if (url.isEmpty() || !url.startsWith("/uploads/")) {
+        if (!ImageUrls.isLocal(url)) {
             throw new IllegalArgumentException("表情包地址不合法，请先上传图片");
         }
         String name = req.name() == null ? "" : req.name().trim();
