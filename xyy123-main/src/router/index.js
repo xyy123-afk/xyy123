@@ -3,26 +3,27 @@ import { getToken } from '../api'
 
 /**
  * 路由分四块：
- *   1. 公开站（/ 文章列表、详情、归档、分类、标签）—— 谁都能看
- *   2. 登录页 /login —— 进后台和私信的入口
+ *   1. 博客站（/ 文章列表、详情、归档、分类、标签）—— 全站要登录，未登录一律去 /login
+ *   2. 登录页 /login —— 全站唯一入口（后台登录 /admin/login 独立）
  *   3. 私信 /chat —— requiresLogin：任何登录用户都能用（不像后台只认站长）
  *   4. 后台 /admin/** —— requiresAuth：只有站长能进
  *
  * 两种守卫的区别：requiresAuth 表示"必须是站长"，requiresLogin 表示"登录就行"。
  *
- * 注意：以前 "/" 是重定向到 /login 的，那是「全站要登录」的旧结构。
- * 博客必须让 "/" 直接是文章列表，否则访客打开就是登录框，等于没有博客。
+ * 全站登录策略不在每个路由上写 meta，而是在守卫里按"白名单"判断：
+ * 只有 /login 和 /admin/login 放行，其余路径没 token 一律重定向到 /login。
  */
 const router = createRouter({
   history: createWebHistory(),
   scrollBehavior: () => ({ top: 0 }),
   routes: [
-    // ===== 公开站 =====
+    // ===== 博客站（全站要登录，守卫在下方统一拦截） =====
     { path: '/', name: 'blog-home', component: () => import('../views/public/BlogHomeView.vue') },
     { path: '/daily', name: 'daily-recommend', component: () => import('../views/public/DailyRecommendView.vue') },
     { path: '/post/:slug', name: 'post-detail', component: () => import('../views/public/PostDetailView.vue') },
     { path: '/archives', name: 'archives', component: () => import('../views/public/ArchiveView.vue') },
     { path: '/categories', name: 'categories', component: () => import('../views/public/CategoriesView.vue') },
+    // 注意：友链是 /links，不是 /link；写错会被兜底规则重定向回首页，看起来像"点了没反应"
     { path: '/links', name: 'links', component: () => import('../views/public/LinksView.vue') },
     { path: '/tag/:id', name: 'tag-posts', component: () => import('../views/public/TagPostsView.vue') },
 
@@ -57,16 +58,17 @@ const router = createRouter({
       ]
     },
 
-    // 兜底：访问不存在的路径回首页，不要跳登录页（访客会被搞懵）
+    // 兜底：不存在的路径回首页；没登录的话守卫会再把它踢到 /login
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ]
 })
 
+// 不用 token 就能进的只有两个登录页，其余路径全部要求登录
+const PUBLIC_PATHS = new Set(['/login', '/admin/login'])
+
 router.beforeEach((to) => {
-  // 父路由带了 meta，子路由用 matched 判断，避免每个子路由重复写一遍
-  // requiresAuth = 必须是站长（后台）；requiresLogin = 登录即可（私信）
-  const needAuth = to.matched.some((r) => r.meta.requiresAuth || r.meta.requiresLogin)
-  if (needAuth && !getToken()) {
+  if (PUBLIC_PATHS.has(to.path)) return
+  if (!getToken()) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 })

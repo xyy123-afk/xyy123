@@ -103,10 +103,10 @@ async function handleLogin() {
     // 保存后端签发的 JWT，之后的请求由 api.js 自动带上 Authorization 头
     setToken(res.data.token)
 
-    // 从后台 / 私信被踢回登录页时，登录后回到原来那一页。
+    // 被守卫踢回登录页时，登录后回到原来那一页；直接打开登录页的默认回博客首页。
     // 只认本站内部路径（以 / 开头），避免被人用 ?redirect=http://... 钓走。
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
-    const target = redirect && redirect.startsWith('/') ? redirect : '/admin/posts'
+    const target = redirect && redirect.startsWith('/') ? redirect : '/'
     timers.push(setTimeout(() => router.push(target), 500))
   } finally {
     loading.value = false
@@ -128,7 +128,7 @@ async function handleLogin() {
       </div>
       <h1>{{ mode === 'login' ? '登录' : '注册新账号' }}</h1>
       <p class="subtitle">
-        {{ mode === 'login' ? `${SITE.name} · 写作后台` : '注册后就能发私信、评论带身份' }}
+        {{ mode === 'login' ? `${SITE.name} · 登录后可见` : '注册后就能发私信、评论带身份' }}
       </p>
 
       <form novalidate @submit.prevent="handleLogin">
@@ -192,7 +192,7 @@ async function handleLogin() {
           <label class="remember">
             <input v-model="remember" type="checkbox" /> 记住我
           </label>
-          <router-link to="/" class="link">返回博客</router-link>
+          <router-link to="/admin/login" class="link">站长后台</router-link>
         </div>
 
         <button type="submit" class="submit" :disabled="loading">

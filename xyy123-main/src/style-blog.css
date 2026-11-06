@@ -1041,6 +1041,122 @@ html[data-spot="off"] .tb-panel::after {
   color: var(--tb-blue);
 }
 
+/* ---------- 帖子流（贴吧楼样式） ----------
+ * 一条帖子 = 楼头（头像 / 昵称 / 等级 / 时间 / 关注）+ 标题 + 摘要 + 底部操作条。
+ * 外部由 .tb-panel-flat 一整个包住，条目之间只用分隔线，不各浮一张卡。
+ */
+
+.tb-floor-card {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--tb-line-soft);
+  transition: background 0.18s;
+}
+
+.tb-floor-card:last-child {
+  border-bottom: none;
+}
+
+.tb-floor-card:hover {
+  background: var(--tb-surface-2);
+}
+
+/* 楼头：头像 + 身份信息 + 右侧关注位 */
+.tb-floor-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tb-floor-id {
+  flex: 1;
+  min-width: 0;
+}
+
+.tb-floor-name-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tb-floor-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--tb-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tb-floor-sub {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--tb-muted);
+}
+
+/* 标题：比摘要大一档，是这一条的主视线 */
+.tb-floor-title {
+  display: block;
+  margin-top: 11px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--tb-text);
+  transition: color 0.18s;
+}
+
+.tb-floor-title:hover {
+  color: var(--tb-blue);
+}
+
+.tb-floor-body {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: var(--tb-text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tb-floor-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+/* 底部操作条：一条细线隔开，操作靠右 */
+.tb-floor-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 20px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--tb-line-soft);
+}
+
+.tb-action-link {
+  color: var(--tb-muted);
+}
+
+/* ---------- 帖内楼层头像（回复区已在别处用同名类，这里统一尺寸） ---------- */
+
+.tb-floor-avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  border-radius: 50%;
+}
+
 /* ---------- 分页 ---------- */
 
 .pagination {
