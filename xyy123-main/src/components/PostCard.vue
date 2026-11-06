@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { fromNow } from '../utils/format'
 import { SITE } from '../site.config'
 
@@ -19,6 +19,28 @@ const props = defineProps({
 
 const link = computed(() => `/post/${props.post.slug || props.post.id}`)
 const visibleTags = computed(() => (props.post.tags || []).slice(0, 2))
+
+const shared = ref(false)
+
+/** 分享：手机上有系统分享就调系统，桌面端复制链接到剪贴板并给个「已复制」反馈 */
+async function share() {
+  const url = `${location.origin}${link.value}`
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: props.post.title, url })
+    } catch {
+      // 用户取消分享，忽略即可
+    }
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(url)
+    shared.value = true
+    setTimeout(() => (shared.value = false), 1600)
+  } catch {
+    // 剪贴板被拒（http 环境或权限未授予），静默降级，不影响页面
+  }
+}
 
 const AVATAR_COLORS = ['#ff7a45', '#52c41a', '#1677ff', '#722ed1', '#eb2f96', '#13c2c2', '#faad14', '#f5222d']
 
@@ -67,15 +89,15 @@ const avatarBg = computed(() => {
     </div>
 
     <footer class="tb-floor-foot">
-      <span class="tb-action">
+      <button type="button" class="tb-action tb-share-btn" @click="share">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="6" cy="12" r="2.6" />
           <circle cx="18" cy="6" r="2.6" />
           <circle cx="18" cy="18" r="2.6" />
           <path d="M8.4 10.8 15.6 7M8.4 13.2l7.2 3.8" />
         </svg>
-        分享
-      </span>
+        {{ shared ? '已复制' : '分享' }}
+      </button>
       <span class="tb-action">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M1.8 12S5.6 5.2 12 5.2 22.2 12 22.2 12 18.4 18.8 12 18.8 1.8 12 1.8 12z" />
@@ -98,3 +120,12 @@ const avatarBg = computed(() => {
     </footer>
   </article>
 </template>
+
+<style scoped>
+/* 分享从 span 改成 button 后，重置浏览器给 button 的默认内边距和字体 */
+.tb-share-btn {
+  padding: 0;
+  font-family: inherit;
+  line-height: 1;
+}
+</style>

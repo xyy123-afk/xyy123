@@ -42,6 +42,9 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final TokenBlacklist blacklist;
 
+    /** 站长用户名（对照 blog.owner-username 配置），用于给前端返回 owner 标记 */
+    private final String ownerUsername;
+
     /** 单作者博客默认关闭注册；想加账号时把 application-dev.properties 里改成 true */
     @Value("${blog.registration-enabled:false}")
     private boolean registrationEnabled;
@@ -56,11 +59,18 @@ public class AuthController {
     private final Map<String, Integer> authFailCount = new ConcurrentHashMap<>();
     private final Map<String, Long> authFailSince = new ConcurrentHashMap<>();
 
-    public AuthController(AuthService authService, UserMapper userMapper, JwtUtil jwtUtil, TokenBlacklist blacklist) {
+    public AuthController(AuthService authService, UserMapper userMapper, JwtUtil jwtUtil, TokenBlacklist blacklist,
+                          @Value("${blog.owner-username:demo001}") String ownerUsername) {
         this.authService = authService;
         this.userMapper = userMapper;
         this.jwtUtil = jwtUtil;
         this.blacklist = blacklist;
+        this.ownerUsername = ownerUsername;
+    }
+
+    /** 当前用户名是不是站长 */
+    private boolean isOwner(String username) {
+        return username != null && ownerUsername.equals(username);
     }
 
     /**
@@ -151,7 +161,7 @@ public class AuthController {
             return ApiResponse.fail("登录已过期，请重新登录", "");
         }
         return ApiResponse.ok(new UserProfileVO(user.getId(), user.getUsername(),
-                user.getNickname(), user.getAvatar(), user.getCreatedAt()));
+                user.getNickname(), user.getAvatar(), user.getCreatedAt(), isOwner(user.getUsername())));
     }
 
     /**
@@ -178,7 +188,7 @@ public class AuthController {
         user.setAvatar(avatar.isEmpty() ? null : avatar);
         userMapper.updateById(user);
         return ApiResponse.ok(new UserProfileVO(user.getId(), user.getUsername(),
-                user.getNickname(), user.getAvatar(), user.getCreatedAt()));
+                user.getNickname(), user.getAvatar(), user.getCreatedAt(), isOwner(user.getUsername())));
     }
 
     /**

@@ -4,7 +4,7 @@ import router from './router'
 import './style.css'
 import './style-blog.css'
 import './style-admin.css'
-import { getToken, setToken, clearToken, refreshToken } from './api'
+import { getToken, setToken, setOwner, clearToken, refreshToken } from './api'
 
 createApp(App).use(router).mount('#app')
 
@@ -16,6 +16,8 @@ createApp(App).use(router).mount('#app')
   const res = await refreshToken()
   if (res.code === 0 && res.data?.token) {
     setToken(res.data.token)
+    // 续期接口同样返回 owner 标记，顺手同步，避免角色信息丢在半路
+    setOwner(res.data.owner)
   } else if (String(res.msg || '').includes('过期')) {
     // 确实过期了（而不是后端没启动之类的网络问题）才清凭证
     clearToken()

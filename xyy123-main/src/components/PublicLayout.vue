@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import ParticleField from './ParticleField.vue'
 import { SITE } from '../site.config'
 import { loadSiteMeta } from '../utils/siteMeta'
-import { getToken } from '../api'
+import { getToken, isOwner } from '../api'
 import { isDark, toggleTheme } from '../utils/theme'
 import { refreshUnread, startGlobalChat, unreadTotal } from '../utils/chatBus'
 import {
@@ -26,6 +26,8 @@ const drawer = ref(false)
 
 /** 有没有登录决定顶栏显示「消息」还是「登录」 */
 const logged = ref(!!getToken())
+/** 是不是站长：非站长隐藏「写文章 / 后台管理」入口 */
+const owner = ref(isOwner())
 
 // 直接引用全局总线的未读数：别人发消息时 WebSocket 会把它改掉，红点就自己亮了，
 // 不用靠"切页面时补一次请求"这种笨办法
@@ -33,6 +35,7 @@ const unread = unreadTotal
 
 async function loadUnread() {
   logged.value = !!getToken()
+  owner.value = isOwner()
   await refreshUnread()
 }
 
@@ -71,6 +74,7 @@ watch(
     drawer.value = false
     keyword.value = String(route.query.q || '')
     logged.value = !!getToken()
+    owner.value = isOwner()
     loadUnread()
   }
 )
@@ -409,7 +413,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
         </button>
 
         <!-- 后台管理：专属登录入口（仅登录、无注册），点击进入站长后台 -->
-        <router-link to="/admin/login" class="tb-pill tb-pill-ghost tb-pill-admin">
+        <router-link v-if="owner" to="/admin/login" class="tb-pill tb-pill-ghost tb-pill-admin">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="6" rx="1.5" />
             <rect x="3" y="13" width="12" height="8" rx="1.5" />
@@ -418,7 +422,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
           后台管理
         </router-link>
 
-        <router-link to="/admin/posts/new" class="tb-pill tb-pill-primary">
+        <router-link v-if="owner" to="/admin/posts/new" class="tb-pill tb-pill-primary">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
             <path d="M12 5v14M5 12h14" />
           </svg>
@@ -484,7 +488,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
           消息
           <span v-if="unread" class="tb-side-dot">{{ unread > 99 ? '99+' : unread }}</span>
         </router-link>
-        <router-link to="/admin/login" class="tb-side-item">
+        <router-link v-if="owner" to="/admin/login" class="tb-side-item">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="6" rx="1.5" />
             <rect x="3" y="13" width="12" height="8" rx="1.5" />

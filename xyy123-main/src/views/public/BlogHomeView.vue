@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import PublicLayout from '../../components/PublicLayout.vue'
 import PostCard from '../../components/PostCard.vue'
 import Pagination from '../../components/Pagination.vue'
-import { getToken, listPosts } from '../../api'
+import { getToken, isOwner, listPosts } from '../../api'
 import { loadSiteMeta } from '../../utils/siteMeta'
 import { SITE } from '../../site.config'
 import { fromNow, formatDate } from '../../utils/format'
@@ -36,8 +36,21 @@ const tags = ref([])
 /** 精华/置顶：本页里 isTop 的那几条单独提到上面一条横条里 */
 const tops = computed(() => posts.value.filter((p) => p.isTop).slice(0, 3))
 
+/** 吧头「精华」入口：点击后只看置顶帖 */
+const isBestTab = computed(() => route.query.tab === 'best')
+
+/**
+ * 真正渲染的帖子列表：精华 tab 下只留置顶帖。
+ * 后端列表本身置顶优先，置顶帖都在第一页，前端就地过滤即可，不用再发一次请求。
+ */
+const visiblePosts = computed(() =>
+  isBestTab.value ? posts.value.filter((p) => p.isTop) : posts.value
+)
+
 const logged = ref(!!getToken())
 const username = ref(sessionStorage.getItem('username') || SITE.author)
+/** 只有站长能写文章，普通登录用户看不到「发帖」入口 */
+const owner = ref(isOwner())
 
 const activeCategory = computed(() => {
   const id = Number(route.query.category)
@@ -124,8 +137,12 @@ onMounted(async () => {
               </div>
 
               <div class="tb-cover-actions">
-                <router-link :to="{ path: '/', query: { tab: 'best' } }" class="tb-pill tb-pill-glass">精华</router-link>
-                <router-link to="/admin/posts/new" class="tb-pill tb-pill-glass-solid">+ 发帖</router-link>
+                <router-link
+                  :to="{ path: '/', query: { tab: 'best' } }"
+                  class="tb-pill tb-pill-glass"
+                  :class="{ 'tb-pill-on': isBestTab }"
+                >精华</router-link>
+                <router-link v-if="owner" to="/admin/posts/new" class="tb-pill tb-pill-glass-solid">+ 发帖</router-link>
               </div>
             </div>
           </section>
@@ -133,7 +150,7 @@ onMounted(async () => {
           <!-- ② 吧导航 + 右侧登录卡 -->
           <div class="tb-nav-row">
             <nav class="tb-tabs tb-tabs-lite">
-              <router-link to="/" class="tb-tab" :class="{ active: !activeCategory && !route.query.q }">全部</router-link>
+              <router-link to="/" class="tb-tab" :class="{ active: !activeCategory && !route.query.q && !isBestTab }">全部</router-link>
               <router-link
                 v-for="c in categories.slice(0, 7)"
                 :key="c.id"
@@ -149,15 +166,16 @@ onMounted(async () => {
             <!-- 登录卡：呼应"首页要登录"的策略，未登录也能从这儿进 -->
             <aside class="tb-login-card">
               <h3>{{ logged ? '已登录' : '登录吧' }}</h3>
-              <p class="tb-login-sub">{{ logged ? '随时发帖、评论和私信' : '登录后查看更多内容' }}</p>
+              <p class="tb-login-sub">{{ logged ? (owner ? '随时发帖、评论和私信' : '随时评论、点赞和私信') : '登录后查看更多内容' }}</p>
               <router-link v-if="!logged" to="/login" class="tb-login-btn">立即登录</router-link>
-              <router-link v-else to="/admin/posts/new" class="tb-login-btn">发一篇新帖</router-link>
+              <router-link v-else-if="owner" to="/admin/posts/new" class="tb-login-btn">发一篇新帖</router-link>
+              <router-link v-else to="/chat" class="tb-login-btn">去私信聊聊</router-link>
               <p class="tb-login-foot">{{ logged ? username : '还没有账号？注册一个' }}</p>
             </aside>
           </div>
 
           <!-- ③ 精华 / 置顶横条 -->
-          <section v-if="tops.length" class="tb-best">
+          <section v-if="tops.length && !isBestTab" class="tb-best">
             <span class="tb-best-tag">精华</span>
             <ul class="tb-best-list">
               <li v-for="p in tops" :key="p.id">
@@ -168,7 +186,11 @@ onMounted(async () => {
 
           <!-- ④ 帖子流 -->
           <div class="tb-feed-head">
-            <span v-if="activeCategory" class="tb-feed-label">
+            <span v-if="isBestTab" class="tb-feed-label">
+              精华帖 · {{ visiblePosts.length }} 篇
+              <button class="tb-clear" @click="clearFilters">退出</button>
+            </span>
+            <span v-else-if="activeCategory" class="tb-feed-label">
               正在浏览「{{ activeCategory.name }}」
               <button class="tb-clear" @click="clearFilters">退出</button>
             </span>
@@ -184,16 +206,16 @@ onMounted(async () => {
           <div class="tb-panel tb-panel-flat">
             <div v-if="loading" class="tb-loading">加载中…</div>
             <div v-else-if="error" class="tb-empty">{{ error }}</div>
-            <div v-else-if="!posts.length" class="tb-empty">
-              这里还没有帖子。{{ route.query.q ? '换个关键词试试。' : '去后台发第一篇吧。' }}
+            <div v-else-if="!visiblePosts.length" class="tb-empty">
+              {{ isBestTab ? '还没有置顶帖。' : (route.query.q ? '没有匹配的帖子，换个关键词试试。' : '这里还没有帖子，去后台发第一篇吧。') }}
             </div>
 
             <template v-else>
-              <PostCard v-for="post in posts" :key="post.id" :post="post" />
+              <PostCard v-for="post in visiblePosts" :key="post.id" :post="post" />
             </template>
           </div>
 
-          <Pagination :current="current" :pages="pages" @change="goPage" />
+          <Pagination v-if="!isBestTab" :current="current" :pages="pages" @change="goPage" />
         </main>
 
         <!-- ===== 右：资料栏 ===== -->
@@ -392,6 +414,13 @@ onMounted(async () => {
 
 .tb-pill-glass-solid:hover {
   background: #2563eb;
+}
+
+/* 「精华」入口的激活态：当前正在看置顶帖时高亮成金色 */
+.tb-cover-actions .tb-pill-on {
+  color: #1f2530;
+  background: #ffd35c;
+  border-color: #ffd35c;
 }
 
 /* ---------- ② 导航 + 登录卡 ---------- */

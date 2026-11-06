@@ -20,6 +20,17 @@ export function setToken(token) {
 export function clearToken() {
   sessionStorage.removeItem(TOKEN_KEY)
   sessionStorage.removeItem('username')
+  sessionStorage.removeItem('owner')
+}
+
+/** 当前登录用户是不是站长（登录/续期成功后由调用方写入，clearToken 时一并清掉） */
+export function isOwner() {
+  return sessionStorage.getItem('owner') === '1'
+}
+
+export function setOwner(owner) {
+  if (owner) sessionStorage.setItem('owner', '1')
+  else sessionStorage.removeItem('owner')
 }
 
 /** 拼请求头：有 JSON body 就带 Content-Type，登录过就带 Authorization */
@@ -64,12 +75,11 @@ async function send(method, path, body, params) {
     return { code: 1, msg: `服务器异常（HTTP ${res.status}）` }
   }
   const data = await res.json()
-  // 后台接口的登录失效统一在这里兜底：清凭证 + 回后台登录页（仅登录、无注册），页面不用各自处理
+  // 后台接口的登录失效统一在这里兜底：清凭证 + 回登录页，页面不用各自处理。
+  // 前台 / 后台分别跳各自登录页；前台带 redirect 参数，登录后能回到刚才那一页。
   if (data && data.code !== 0 && isAuthError(data)) {
     clearToken()
-    if (location.pathname.startsWith('/admin')) {
-      location.href = '/admin/login'
-    }
+    redirectToLogin()
   }
   return data
 }
@@ -79,6 +89,22 @@ export function isAuthError(res) {
   if (!res || res.code === 0) return false
   const msg = String(res.msg || '')
   return msg.includes('请先登录') || msg.includes('登录已过期')
+}
+
+/** 并发请求同时发现登录失效时，只跳一次登录页，别让一屏请求都在刷跳转 */
+let authRedirecting = false
+
+function redirectToLogin() {
+  const path = location.pathname
+  // 已经在登录页就不动，避免死循环
+  if (path === '/login' || path === '/admin/login') return
+  if (authRedirecting) return
+  authRedirecting = true
+  if (path.startsWith('/admin')) {
+    location.href = '/admin/login'
+  } else {
+    location.href = `/login?redirect=${encodeURIComponent(path + location.search)}`
+  }
 }
 
 /* ===================== 认证 ===================== */

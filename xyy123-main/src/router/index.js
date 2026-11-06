@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getToken } from '../api'
+import { getToken, isOwner } from '../api'
 
 /**
  * 路由分四块：
@@ -70,6 +70,11 @@ router.beforeEach((to) => {
   if (PUBLIC_PATHS.has(to.path)) return
   if (!getToken()) {
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
+  // 后台只认站长：普通登录用户直接回首页。
+  // 顶栏/侧栏入口已对非站长隐藏，这里兜住「手输 /admin/xxx 网址」的情况。
+  if (to.matched.some((r) => r.meta.requiresAuth) && !isOwner()) {
+    return { name: 'blog-home' }
   }
 })
 

@@ -13,6 +13,7 @@ REM ==========================================================
 REM ---------- 可调参数 ----------
 set "BACKEND_PORT=8081"
 set "FRONTEND_PORT=5173"
+set "LOCAL_IP=192.168.68.72"
 set "NPM_REGISTRY=https://registry.npmmirror.com"
 set "DB_PASSWORD=123456"
 set "BACKEND_TITLE=XYY-BACKEND-8081"
@@ -171,8 +172,9 @@ call :waitPort %FRONTEND_PORT% 前端
 echo.
 echo ==============================================
 echo   启动流程结束
-echo     前端首页：http://localhost:%FRONTEND_PORT%
-if not defined SKIP_BACKEND echo     后端接口：http://localhost:%BACKEND_PORT%
+echo     本机访问   ：http://localhost:%FRONTEND_PORT%
+echo     局域网访问 ：http://%LOCAL_IP%:%FRONTEND_PORT%
+if not defined SKIP_BACKEND echo     后端接口   ：http://%LOCAL_IP%:%BACKEND_PORT%
 echo     站长账号：demo001 / 123456
 echo   日常关闭请运行：一键停止.bat
 echo ==============================================

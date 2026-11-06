@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ParticleField from '../components/ParticleField.vue'
-import { login, register, setToken } from '../api'
+import { login, register, setToken, setOwner } from '../api'
 import { SITE } from '../site.config'
 
 const router = useRouter()
@@ -102,6 +102,8 @@ async function handleLogin() {
     sessionStorage.setItem('username', res.data.username)
     // 保存后端签发的 JWT，之后的请求由 api.js 自动带上 Authorization 头
     setToken(res.data.token)
+    // 后端返回 owner 标记：站长才能看到「写文章 / 后台管理」入口
+    setOwner(res.data.owner)
 
     // 被守卫踢回登录页时，登录后回到原来那一页；直接打开登录页的默认回博客首页。
     // 只认本站内部路径（以 / 开头），避免被人用 ?redirect=http://... 钓走。

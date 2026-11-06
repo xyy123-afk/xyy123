@@ -5,6 +5,7 @@ import com.fenglin.springboottest.dto.UserVO;
 import com.fenglin.springboottest.entity.User;
 import com.fenglin.springboottest.mapper.UserMapper;
 import com.fenglin.springboottest.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,10 +27,18 @@ public class AuthService {
 
     private final UserMapper userMapper;
     private final JwtUtil jwtUtil;
+    private final String ownerUsername;
 
-    public AuthService(UserMapper userMapper, JwtUtil jwtUtil) {
+    public AuthService(UserMapper userMapper, JwtUtil jwtUtil,
+                       @Value("${blog.owner-username:demo001}") String ownerUsername) {
         this.userMapper = userMapper;
         this.jwtUtil = jwtUtil;
+        this.ownerUsername = ownerUsername;
+    }
+
+    /** 当前用户名是不是站长（对照配置里的 owner-username） */
+    private boolean isOwner(String username) {
+        return username != null && ownerUsername.equals(username);
     }
 
     /** 注册：后端兜底校验（前端已校验过一遍），密码 BCrypt 加密后落库 */
@@ -70,7 +79,7 @@ public class AuthService {
             return ApiResponse.fail("该用户名已被注册", "username");
         }
         // 注册完直接算登录，签发 token，前端拿着它去访问待办等需要身份的接口
-        return ApiResponse.ok(new UserVO(user.getUsername(), jwtUtil.createToken(user.getUsername())));
+        return ApiResponse.ok(new UserVO(user.getUsername(), jwtUtil.createToken(user.getUsername()), isOwner(user.getUsername())));
     }
 
     /** 登录：校验 BCrypt 密文；不区分「用户不存在」和「密码错误」，避免被枚举用户名 */
@@ -87,7 +96,7 @@ public class AuthService {
             return ApiResponse.fail("用户名或密码错误", "");
         }
         // 校验通过，签发 token
-        return ApiResponse.ok(new UserVO(user.getUsername(), jwtUtil.createToken(user.getUsername())));
+        return ApiResponse.ok(new UserVO(user.getUsername(), jwtUtil.createToken(user.getUsername()), isOwner(user.getUsername())));
     }
 
     /**
@@ -119,7 +128,7 @@ public class AuthService {
         }
         user.setPassword(encoder.encode(newPassword));
         userMapper.updateById(user);
-        return ApiResponse.ok(new UserVO(user.getUsername(), jwtUtil.createToken(user.getUsername())));
+        return ApiResponse.ok(new UserVO(user.getUsername(), jwtUtil.createToken(user.getUsername()), isOwner(user.getUsername())));
     }
 
     /**
@@ -137,6 +146,6 @@ public class AuthService {
             // 用户可能已被删除，这时不能再续期
             return ApiResponse.fail("登录已过期，请重新登录", "");
         }
-        return ApiResponse.ok(new UserVO(user.getUsername(), jwtUtil.createToken(user.getUsername())));
+        return ApiResponse.ok(new UserVO(user.getUsername(), jwtUtil.createToken(user.getUsername()), isOwner(user.getUsername())));
     }
 }

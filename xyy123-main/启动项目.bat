@@ -5,6 +5,7 @@ title 枫林小筑 一键启动
 setlocal
 set "FRONTEND_DIR=%~dp0"
 set "BACKEND_DIR=%~dp0..\springBootTest-main"
+set "LOCAL_IP=192.168.68.72"
 :: 兼容布局：后端若与前端同在「新建文件夹」等同一目录，回退到同级查找
 if not exist "%BACKEND_DIR%\pom.xml" set "BACKEND_DIR=%~dp0springBootTest-main"
 set "MYSQL_EXE=C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"
@@ -81,7 +82,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo 启动完成！浏览器将打开 http://localhost:5173
+echo 启动完成！本机 http://localhost:5173 ，局域网 http://%LOCAL_IP%:5173
 echo 首启后端会下载 Maven 依赖，请耐心等待；两个黑窗口不要关闭。
 start http://localhost:5173 >nul 2>&1
 exit /b 0
