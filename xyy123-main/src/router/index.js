@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getToken, isOwner } from '../api'
+import { getToken, isOwner, hasValidToken } from '../api'
 
 /**
  * 路由分四块：
@@ -67,7 +67,16 @@ const router = createRouter({
 const PUBLIC_PATHS = new Set(['/login', '/admin/login'])
 
 router.beforeEach((to) => {
-  if (PUBLIC_PATHS.has(to.path)) return
+  if (PUBLIC_PATHS.has(to.path)) {
+    // 已经拿着有效 token 还停在登录页：直接送走，别让人以为要再登录一次。
+    // 站长回后台，普通用户回首页；带 redirect 参数时优先回原页面。
+    if (hasValidToken()) {
+      const redirect = typeof to.query.redirect === 'string' ? to.query.redirect : null
+      if (redirect && redirect.startsWith('/') && redirect !== to.path) return redirect
+      return isOwner() ? { name: 'admin-dashboard' } : { name: 'blog-home' }
+    }
+    return
+  }
   if (!getToken()) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }

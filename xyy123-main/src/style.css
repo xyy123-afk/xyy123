@@ -124,71 +124,115 @@ body[data-section="admin"] {
   padding: 20px;
 }
 
-/* 登录页需要一个居中的舞台；后台布局自己撑满，不套这个类 */
+/*
+ * 登录页：星空夜景风格（参考截图）。
+ * 全屏星空做底，表单不再套卡片，直接浮在夜空上。
+ */
 .login-page {
-  min-height: calc(100vh - 40px);
-  min-height: calc(100dvh - 40px);
+  /* 抵消 body[data-section=admin] 的 20px 内边距，让夜空铺满全屏 */
+  margin: -20px;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+  /* 夜空底色：树影剪影垫底 + 上深下微亮的深蓝夜空渐变 */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 260' preserveAspectRatio='none'%3E%3Cpath fill='%23070c18' d='M0 260V150l40-28 30 34 28-52 38 44 30-64 42 50 34-40 44 56 36-70 46 54 30-38 48 60 40-72 44 52 36-42 50 58 38-66 46 50 32-40 50 60 40-70 44 52 38-44 48 58 42-64 46 48 34-38 48 56 40-66 44 50 36-40 46 56 42-62 44 46 36-36 46 52V260z'/%3E%3C/svg%3E") bottom center / 100% 26vh no-repeat,
+    linear-gradient(180deg, #0a0f1e 0%, #0d1526 45%, #14203a 78%, #1b2a48 100%);
 }
 
-/* ---------- 登录卡片：深色毛玻璃 ---------- */
+/* 两个伪元素画两层铺星星：radial-gradient 小白点 + 平铺 background-size，
+   两层疏密不同叠出真实的夜空，不再是两团光晕 */
+.login-page::before,
+.login-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+}
+
+/* 远景星：小而密 */
+.login-page::before {
+  background-image:
+    radial-gradient(1px 1px at 25px 35px, rgba(255, 255, 255, 0.85), transparent 1.5px),
+    radial-gradient(1px 1px at 110px 90px, rgba(255, 255, 255, 0.6), transparent 1.5px),
+    radial-gradient(1.5px 1.5px at 180px 40px, rgba(210, 225, 255, 0.8), transparent 2px),
+    radial-gradient(1px 1px at 70px 150px, rgba(255, 255, 255, 0.5), transparent 1.5px),
+    radial-gradient(1px 1px at 200px 130px, rgba(255, 255, 255, 0.7), transparent 1.5px),
+    radial-gradient(1.5px 1.5px at 145px 180px, rgba(190, 210, 255, 0.65), transparent 2px);
+  background-size: 240px 220px;
+  animation: twinkle 5s ease-in-out infinite alternate;
+}
+
+/* 近景星：大而疏，带一点冷色 */
+.login-page::after {
+  background-image:
+    radial-gradient(2px 2px at 60px 60px, rgba(255, 255, 255, 0.9), transparent 2.5px),
+    radial-gradient(2px 2px at 260px 160px, rgba(200, 220, 255, 0.8), transparent 2.5px),
+    radial-gradient(1.5px 1.5px at 170px 240px, rgba(255, 255, 255, 0.7), transparent 2px),
+    radial-gradient(2px 2px at 330px 90px, rgba(255, 255, 255, 0.75), transparent 2.5px);
+  background-size: 420px 340px;
+  animation: twinkle 7s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes twinkle {
+  from { opacity: 0.75; }
+  to { opacity: 1; }
+}
 
 .login-card {
   position: relative;
   z-index: 2;
   width: 100%;
-  max-width: 380px;
-  background: rgba(22, 26, 34, 0.78);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 22px;
-  padding: 38px 32px 30px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  max-width: 340px;
+  padding: 0 24px;
   text-align: center;
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 16px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #7ba4ff, #5b8cff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 20px rgba(91, 140, 255, 0.35);
+  display: none;
 }
 
 .login-card h1 {
-  font-size: 22px;
-  color: var(--tb-text);
-  margin-bottom: 4px;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 6px;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+  margin-bottom: 34px;
 }
 
 .subtitle {
-  font-size: 13px;
-  color: var(--tb-muted);
-  margin-bottom: 26px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  margin: -26px 0 30px;
 }
 
+/* 输入框：无卡片底，圆角胶囊 + 半透明描边，像截图里的两个悬浮胶囊 */
 .field {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--tb-surface-3);
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 0 12px;
-  margin-bottom: 14px;
-  transition: border-color 0.2s, background 0.2s;
+  gap: 10px;
+  background: rgba(10, 16, 32, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 0 18px;
+  margin-bottom: 18px;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.field:hover {
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .field:focus-within {
-  border-color: var(--tb-blue);
-  background: var(--tb-surface-2);
+  border-color: #2196f0;
+  background: rgba(10, 16, 32, 0.5);
+  box-shadow: 0 0 0 3px rgba(33, 150, 240, 0.18);
 }
 
 .icon {
@@ -201,7 +245,7 @@ body[data-section="admin"] {
   border: none;
   outline: none;
   background: transparent;
-  padding: 9px 4px;
+  padding: 11px 4px;
   font-size: 14px;
   color: var(--tb-text);
 }
@@ -215,7 +259,7 @@ body[data-section="admin"] {
 .field input:-webkit-autofill:hover,
 .field input:-webkit-autofill:focus {
   -webkit-text-fill-color: var(--tb-text);
-  -webkit-box-shadow: 0 0 0 1000px var(--tb-surface-3) inset;
+  -webkit-box-shadow: 0 0 0 1000px rgba(10, 16, 32, 0.9) inset;
   caret-color: var(--tb-text);
   transition: background-color 9999s ease-out 0s;
 }
@@ -228,7 +272,7 @@ body[data-section="admin"] {
   align-items: center;
   padding: 0;
   border-radius: 6px;
-  color: var(--tb-muted);
+  color: rgba(255, 255, 255, 0.45);
   transition: color 0.2s;
 }
 
@@ -251,23 +295,23 @@ body[data-section="admin"] {
   align-items: center;
   justify-content: space-between;
   font-size: 13px;
-  margin: 4px 2px 18px;
+  margin: 4px 2px 20px;
 }
 
 .remember {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--tb-text-2);
+  color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
 }
 
 .remember input {
-  accent-color: var(--tb-blue);
+  accent-color: #2196f0;
 }
 
 .link {
-  color: var(--tb-blue);
+  color: #7cc4ff;
   text-decoration: none;
 }
 
@@ -276,22 +320,43 @@ body[data-section="admin"] {
 }
 
 .submit {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   border: none;
   border-radius: 999px;
   padding: 13px;
   font-size: 15px;
   font-weight: 600;
-  letter-spacing: 2px;
+  letter-spacing: 8px;
+  text-indent: 8px; /* 抵消最后一个字的字距，视觉居中 */
   color: #fff;
-  background: linear-gradient(135deg, #7ba4ff, #5b8cff);
+  background: linear-gradient(135deg, #2ea8f5, #1e8fe8);
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.2s;
-  box-shadow: 0 10px 24px rgba(91, 140, 255, 0.35);
+  transition: transform 0.1s, box-shadow 0.2s, filter 0.2s;
+  box-shadow: 0 10px 26px rgba(30, 143, 232, 0.4);
+}
+
+/* 高光扫过：hover 时一道斜向光带从左划到右，按钮更有质感 */
+.submit::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.55s ease;
+}
+
+.submit:hover::after {
+  left: 130%;
 }
 
 .submit:hover {
-  box-shadow: 0 14px 30px rgba(91, 140, 255, 0.45);
+  box-shadow: 0 14px 32px rgba(30, 143, 232, 0.5);
+  filter: brightness(1.06);
 }
 
 .submit:active {
@@ -318,16 +383,18 @@ body[data-section="admin"] {
 }
 
 .footer {
-  margin-top: 18px;
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 13px;
-  color: var(--tb-muted);
+  color: rgba(255, 255, 255, 0.4);
 }
 
-/* 登录/注册切换链接：跟页面的蓝色系保持一致 */
+/* 登录/注册切换链接：浅蓝，夜空上依然醒目 */
 .footer a {
-  color: var(--tb-blue);
+  color: #7cc4ff;
   text-decoration: none;
-  border-bottom: 1px dashed rgba(91, 140, 255, 0.5);
+  border-bottom: 1px dashed rgba(124, 196, 255, 0.45);
 }
 
 .footer a:hover {
@@ -338,13 +405,13 @@ body[data-section="admin"] {
 
 .field.invalid {
   border-color: #ff6b6b;
-  background: rgba(229, 72, 77, 0.1);
+  background: rgba(229, 72, 77, 0.14);
 }
 .field.invalid .icon {
   color: #ff6b6b;
 }
 .field .icon {
-  color: var(--tb-muted);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 @keyframes shake {

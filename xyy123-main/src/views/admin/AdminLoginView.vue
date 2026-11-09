@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ParticleField from '../../components/ParticleField.vue'
-import { login, setToken, setOwner } from '../../api'
+import { login, setToken, setOwner, setUsername } from '../../api'
 import { SITE } from '../../site.config'
 
 const router = useRouter()
@@ -81,7 +81,8 @@ async function handleLogin() {
 
     msg.value = `登录成功，欢迎回来 ${res.data.username}`
     msgType.value = 'success'
-    sessionStorage.setItem('username', res.data.username)
+    // 用户名 / token / owner 统一走 api.js 双层保存，新标签页不用重新登录
+    setUsername(res.data.username)
     // 保存后端签发的 JWT，之后的请求由 api.js 自动带上 Authorization 头
     setToken(res.data.token)
     // 后台登录的一定是站长：存下 owner 标记，否则路由守卫会把他当普通用户踢回首页

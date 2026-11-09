@@ -4,23 +4,56 @@
 const BASE = '/api'
 
 // ===== 登录凭证（JWT）=====
-// 登录成功后后端在 data.token 里返回 JWT，存到 sessionStorage：
-// 关掉标签页就失效，比 localStorage 安全一点。退出登录时清掉即可。
+// 双层存储：sessionStorage 是工作层（当次会话），localStorage 是持久层。
+// 新开标签页 / 重开浏览器时 getToken() 会从持久层自动恢复，
+// 解决「每开一个新标签页都要重新登录」的问题；只有主动登出才会清掉持久层。
 const TOKEN_KEY = 'token'
+const AUTH_PERSIST_KEY = 'auth_persist'
+
+/** 读持久层里保存的完整登录态 { token, username, owner } */
+function readPersist() {
+  try {
+    return JSON.parse(localStorage.getItem(AUTH_PERSIST_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
+/** 把补丁合并进持久层（只覆盖传入的字段，其余保持不变） */
+function writePersist(patch) {
+  const next = { ...readPersist(), ...patch }
+  localStorage.setItem(AUTH_PERSIST_KEY, JSON.stringify(next))
+}
 
 export function getToken() {
-  return sessionStorage.getItem(TOKEN_KEY)
+  const t = sessionStorage.getItem(TOKEN_KEY)
+  if (t) return t
+  // 工作层为空（新标签页/重开浏览器）：从持久层恢复整套登录态
+  const saved = readPersist()
+  if (saved && saved.token) {
+    sessionStorage.setItem(TOKEN_KEY, saved.token)
+    if (saved.username) sessionStorage.setItem('username', saved.username)
+    if (saved.owner) sessionStorage.setItem('owner', '1')
+    return saved.token
+  }
+  return null
 }
 
 export function setToken(token) {
-  if (token) sessionStorage.setItem(TOKEN_KEY, token)
-  else sessionStorage.removeItem(TOKEN_KEY)
+  if (token) {
+    sessionStorage.setItem(TOKEN_KEY, token)
+    writePersist({ token })
+  } else {
+    sessionStorage.removeItem(TOKEN_KEY)
+  }
 }
 
 export function clearToken() {
   sessionStorage.removeItem(TOKEN_KEY)
   sessionStorage.removeItem('username')
   sessionStorage.removeItem('owner')
+  // 主动登出才清持久层；被动掉线（redirectToLogin）也会走到这里，保持一致
+  localStorage.removeItem(AUTH_PERSIST_KEY)
 }
 
 /** 当前登录用户是不是站长（登录/续期成功后由调用方写入，clearToken 时一并清掉） */
@@ -29,8 +62,33 @@ export function isOwner() {
 }
 
 export function setOwner(owner) {
-  if (owner) sessionStorage.setItem('owner', '1')
-  else sessionStorage.removeItem('owner')
+  if (owner) {
+    sessionStorage.setItem('owner', '1')
+    writePersist({ owner: true })
+  } else {
+    sessionStorage.removeItem('owner')
+    writePersist({ owner: false })
+  }
+}
+
+/** 记录当前用户名（顶栏问候 / 后台侧栏显示用），随登录态一起持久化 */
+export function setUsername(username) {
+  if (username) {
+    sessionStorage.setItem('username', username)
+    writePersist({ username })
+  }
+}
+
+/** token 是否还有效：解析 JWT 的 exp（过期时间戳）跟当前时间比，避免拿过期 token 死循环跳转 */
+export function hasValidToken() {
+  const t = getToken()
+  if (!t) return false
+  try {
+    const payload = JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return Number(payload.exp) * 1000 > Date.now()
+  } catch {
+    return false
+  }
 }
 
 /** 拼请求头：有 JSON body 就带 Content-Type，登录过就带 Authorization */

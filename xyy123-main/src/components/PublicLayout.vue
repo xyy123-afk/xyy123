@@ -412,8 +412,8 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
           </svg>
         </button>
 
-        <!-- 后台管理：专属登录入口（仅登录、无注册），点击进入站长后台 -->
-        <router-link v-if="owner" to="/admin/login" class="tb-pill tb-pill-ghost tb-pill-admin">
+        <!-- 后台管理：直达后台本体。入口只对站长显示，路由守卫会兜住非站长 -->
+        <router-link v-if="owner" to="/admin" class="tb-pill tb-pill-ghost tb-pill-admin">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="6" rx="1.5" />
             <rect x="3" y="13" width="12" height="8" rx="1.5" />
@@ -488,7 +488,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
           消息
           <span v-if="unread" class="tb-side-dot">{{ unread > 99 ? '99+' : unread }}</span>
         </router-link>
-        <router-link v-if="owner" to="/admin/login" class="tb-side-item">
+        <router-link v-if="owner" to="/admin" class="tb-side-item">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="6" rx="1.5" />
             <rect x="3" y="13" width="12" height="8" rx="1.5" />

@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ParticleField from '../components/ParticleField.vue'
-import { login, register, setToken, setOwner } from '../api'
+import { login, register, setToken, setOwner, setUsername } from '../api'
 import { SITE } from '../site.config'
 
 const router = useRouter()
@@ -99,16 +99,18 @@ async function handleLogin() {
       ? `注册成功，欢迎 ${res.data.username}`
       : `登录成功，欢迎回来 ${res.data.username}`
     msgType.value = 'success'
-    sessionStorage.setItem('username', res.data.username)
-    // 保存后端签发的 JWT，之后的请求由 api.js 自动带上 Authorization 头
+    // 用户名 / token / owner 标记统一走 api.js：sessionStorage + localStorage 双层保存，
+    // 新开标签页、重开浏览器都不用再登录
+    setUsername(res.data.username)
     setToken(res.data.token)
     // 后端返回 owner 标记：站长才能看到「写文章 / 后台管理」入口
     setOwner(res.data.owner)
 
-    // 被守卫踢回登录页时，登录后回到原来那一页；直接打开登录页的默认回博客首页。
+    // 站长登录后默认直达后台，不再单独走一次后台登录；
+    // 普通用户回博客首页。被守卫踢回时优先回原来那一页。
     // 只认本站内部路径（以 / 开头），避免被人用 ?redirect=http://... 钓走。
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : null
-    const target = redirect && redirect.startsWith('/') ? redirect : '/'
+    const target = redirect && redirect.startsWith('/') ? redirect : res.data.owner ? '/admin' : '/'
     timers.push(setTimeout(() => router.push(target), 500))
   } finally {
     loading.value = false
@@ -128,9 +130,9 @@ async function handleLogin() {
           <circle cx="12" cy="7" r="4" />
         </svg>
       </div>
-      <h1>{{ mode === 'login' ? '登录' : '注册新账号' }}</h1>
+      <h1>{{ mode === 'login' ? '欢迎你' : '注册新账号' }}</h1>
       <p class="subtitle">
-        {{ mode === 'login' ? `${SITE.name} · 登录后可见` : '注册后就能发私信、评论带身份' }}
+        {{ mode === 'login' ? SITE.name : '注册后就能发私信、评论带身份' }}
       </p>
 
       <form novalidate @submit.prevent="handleLogin">
