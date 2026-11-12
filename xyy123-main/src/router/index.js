@@ -26,6 +26,9 @@ const router = createRouter({
     // 注意：友链是 /links，不是 /link；写错会被兜底规则重定向回首页，看起来像"点了没反应"
     { path: '/links', name: 'links', component: () => import('../views/public/LinksView.vue') },
     { path: '/tag/:id', name: 'tag-posts', component: () => import('../views/public/TagPostsView.vue') },
+    // Galgame《雨夜图书馆》：剧本在前端，进度存档走 /api/galgame/**（挂了 LoginInterceptor），
+    // 所以要登录才能进——没登录会被下面的统一守卫送去 /login。
+    { path: '/galgame', name: 'galgame', component: () => import('../views/public/GalgameView.vue') },
 
     // ===== 登录 =====
     { path: '/login', name: 'login', component: () => import('../views/LoginView.vue') },

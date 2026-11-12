@@ -319,6 +319,42 @@ DEALLOCATE PREPARE stmt_legacy;
 -- ---------- 8. 清理旧业务表（Todo 已下线，全库已备份） ----------
 DROP TABLE IF EXISTS todos;
 
+-- ---------- 8.5 Galgame《雨夜图书馆》存档 ----------
+-- 一个用户一份存档（user_id 唯一），存 JSON 快照而不是逐字段拆列：
+-- 剧本会持续改，节点里每加一个变量就得改表结构太脆弱；
+-- 存 JSON 的话，后端只认「节点 id + 历史 + flags」三块，剧本自己进化也不影响老存档。
+CREATE TABLE IF NOT EXISTS galgame_saves (
+  id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
+  user_id      BIGINT UNSIGNED NOT NULL                COMMENT '存档所属用户 users.id',
+  node_id      VARCHAR(64)     NOT NULL                COMMENT '当前停留的剧情节点 id',
+  history      MEDIUMTEXT      NOT NULL                COMMENT '已读节点 id 数组（JSON），用于回顾',
+  flags        MEDIUMTEXT      NOT NULL                COMMENT '好感度 / 已选分支等状态（JSON）',
+  ending       VARCHAR(32)     NULL                    COMMENT '已打出的结局 id，未通关为 NULL',
+  play_seconds INT UNSIGNED    NOT NULL DEFAULT 0      COMMENT '累计游玩秒数',
+  created_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '首次开始时间',
+  updated_at   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后保存时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_galgame_user (user_id)                 COMMENT '一人一档，覆盖式保存',
+  KEY idx_galgame_ending (ending)                      COMMENT '结局统计用'
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT = 'Galgame 存档（雨夜图书馆）';
+
+-- 结局收集：一个人可以打出多个结局，(user_id, ending_id) 唯一保证重复达成只记一次
+CREATE TABLE IF NOT EXISTS galgame_endings (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
+  user_id     BIGINT UNSIGNED NOT NULL                COMMENT '达成结局的用户 users.id',
+  ending_id   VARCHAR(32)     NOT NULL                COMMENT '结局 id：good / normal / hidden',
+  created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '首次达成时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_galgame_user_ending (user_id, ending_id) COMMENT '同用户同结局只记一次',
+  KEY idx_galgame_ending_id (ending_id)               COMMENT '按结局聚合统计'
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COLLATE = utf8mb4_unicode_ci
+  COMMENT = 'Galgame 结局收集记录';
+
 -- ---------- 9. 种子数据（全部幂等，重复执行不报错） ----------
 
 -- 9.1 站长账号：demo001 / 123456
@@ -369,3 +405,5 @@ SELECT p.id, t.id FROM posts p, tags t WHERE p.slug = 'hello-blog' AND t.name IN
 -- USE xyy_login; SHOW TABLES;
 -- SELECT id, username, nickname, LEFT(password, 7) AS pwd_prefix FROM users;
 -- SELECT id, title, slug, status, published_at FROM posts;
+-- SELECT * FROM galgame_saves;
+-- SELECT ending_id, COUNT(*) AS 达成人数 FROM galgame_endings GROUP BY ending_id;

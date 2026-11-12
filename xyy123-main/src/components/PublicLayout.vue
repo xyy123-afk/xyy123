@@ -430,6 +430,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
         </router-link>
 
         <!-- 登录后才看得到私信入口，未读条数直接挂红点上 -->
+        <router-link v-if="logged" to="/galgame" class="tb-pill tb-pill-ghost tb-pill-game" title="雨夜图书馆 · 互动小说">
+          游戏
+        </router-link>
         <router-link v-if="logged" to="/chat" class="tb-pill tb-pill-ghost tb-pill-chat">
           消息
           <span v-if="unread" class="tb-pill-dot">{{ unread > 99 ? '99+' : unread }}</span>
@@ -480,6 +483,14 @@ onBeforeUnmount(() => document.removeEventListener('click', onSpotDocClick))
             <path d="M14 10a4.5 4.5 0 0 0-6.4-.4l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.7-1.7" />
           </svg>
           友链
+        </router-link>
+        <!-- 雨夜图书馆（Galgame）：剧本在前端，进度存档在后端，所以要登录才有存档可读 -->
+        <router-link v-if="logged" to="/galgame" class="tb-side-item" :class="{ active: isActive('/galgame') }">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.5" y="6" width="19" height="12" rx="4" />
+            <path d="M6.5 10.5v3M5 12h3M15.5 11h.01M17.5 13h.01" />
+          </svg>
+          雨夜图书馆
         </router-link>
         <router-link v-if="logged" to="/chat" class="tb-side-item" :class="{ active: isActive('/chat') }">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">

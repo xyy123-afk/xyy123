@@ -130,7 +130,19 @@ async function send(method, path, body, params) {
   }
 
   if (!res.ok) {
-    return { code: 1, msg: `服务器异常（HTTP ${res.status}）` }
+    // 非 2xx 时也尽量把后端/代理给的原因读出来，别只甩一个状态码给用户。
+    // 兼容两种错误体：本项目的 { code, msg }，和 Spring Boot 默认的 { message }。
+    let detail = ''
+    try {
+      const err = await res.json()
+      detail = err.msg || err.message || ''
+    } catch {
+      // 不是 JSON（比如代理直接返回 HTML 错误页）就忽略，退回到状态码提示
+    }
+    return {
+      code: 1,
+      msg: detail ? `${detail}（HTTP ${res.status}）` : `服务器异常（HTTP ${res.status}）`
+    }
   }
   const data = await res.json()
   // 后台接口的登录失效统一在这里兜底：清凭证 + 回登录页，页面不用各自处理。
@@ -333,7 +345,18 @@ export async function uploadImage(file) {
     return { code: 1, msg: '连不上服务器，请确认后端已启动（8081 端口）' }
   }
   if (!res.ok) {
-    return { code: 1, msg: `服务器异常（HTTP ${res.status}）` }
+    // 和 send() 一样：能读到后端原因就读出来，读不到才退回状态码
+    let detail = ''
+    try {
+      const err = await res.json()
+      detail = err.msg || err.message || ''
+    } catch {
+      // 非 JSON 错误体，忽略
+    }
+    return {
+      code: 1,
+      msg: detail ? `${detail}（HTTP ${res.status}）` : `服务器异常（HTTP ${res.status}）`
+    }
   }
   return res.json()
 }
@@ -440,4 +463,29 @@ export function adminAddTag(name) {
 
 export function adminDeleteTag(id) {
   return send('DELETE', `/admin/tags/${id}`)
+}
+
+/* ===================== Galgame《雨夜图书馆》 ===================== */
+
+/**
+ * 读档：返回 { nodeId, history, flags, ending, playSeconds, endings, stats }。
+ * 没玩过时 nodeId 为 null，页面据此显示"开始新游戏"。
+ */
+export function galgameLoad() {
+  return send('GET', '/galgame/save')
+}
+
+/** 存盘：payload 来自 engine.js 的 serialize()，一人一档，覆盖式保存 */
+export function galgameSave(payload) {
+  return send('POST', '/galgame/save', payload)
+}
+
+/** 记录达成结局，重复达成不会报错（后端唯一索引兜底） */
+export function galgameRecordEnding(payload) {
+  return send('POST', '/galgame/ending', payload)
+}
+
+/** 清档重来：只删存档，已收集的结局记录保留 */
+export function galgameClear() {
+  return send('DELETE', '/galgame/save')
 }

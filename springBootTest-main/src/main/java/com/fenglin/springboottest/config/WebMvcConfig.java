@@ -16,6 +16,7 @@ import java.nio.file.Paths;
  * /api/chat/** 任何登录用户都能用（LoginInterceptor）——私信是"我的"功能，
  * 游客不该访问，但也不该只有站长能用；
  * /api/upload 是头像/表情包上传，同样需要登录，防止匿名乱传文件。
+ * /api/galgame/** 是《雨夜图书馆》的存档，任何登录用户都能玩、各存各的档。
  *
  * <p>公开接口 /api/blog/** 不挂任何拦截器——博客前台本来就该匿名可读。
  * /api/images/** 是读图接口，同样必须匿名可读：页面上的 &lt;img&gt; 不带 token，
@@ -39,7 +40,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addInterceptor(adminInterceptor)
                 .addPathPatterns("/api/admin/**");
         registry.addInterceptor(loginInterceptor)
-                .addPathPatterns("/api/chat/**", "/api/upload");
+                .addPathPatterns("/api/chat/**", "/api/upload", "/api/galgame/**");
     }
 
     /**

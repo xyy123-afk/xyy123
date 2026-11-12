@@ -30,7 +30,7 @@ netstat -ano 2>nul | findstr ":5173" | findstr "LISTENING" >nul
 if errorlevel 1 (
   echo [2/2] 启动 Vite 开发服务器 ...
   echo       提示：请确保后端已启动（8081），否则登录接口连不上。
-  echo       局域网访问：http://192.168.68.72:5173
+  echo       局域网访问：http://本机内网IP:5173 （vite.config.js 自动探测本机 IP）
   cd /d "%FRONTEND_DIR%"
   call npm run dev
 ) else (

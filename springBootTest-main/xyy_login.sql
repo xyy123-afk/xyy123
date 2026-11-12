@@ -11,7 +11,7 @@
  Target Server Version : 80039 (8.0.39)
  File Encoding         : 65001
 
- Date: 09/11/2026 09:58:43
+ Date: 12/11/2026 15:11:09
 */
 
 SET NAMES utf8mb4;
@@ -30,7 +30,7 @@ CREATE TABLE `categories`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_categories_name`(`name` ASC) USING BTREE,
   UNIQUE INDEX `uk_categories_slug`(`slug` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 44 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章分类表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 56 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章分类表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of categories
@@ -89,7 +89,52 @@ CREATE TABLE `conversations`  (
 -- ----------------------------
 INSERT INTO `conversations` VALUES (1, 1, 2, '😀', '2026-11-09 09:51:21', 0, 4, '2026-11-02 09:03:38', '2026-11-09 09:51:21');
 INSERT INTO `conversations` VALUES (2, 1, 7, '1', '2026-11-09 09:55:36', 0, 4, '2026-11-05 14:00:40', '2026-11-09 09:55:36');
-INSERT INTO `conversations` VALUES (3, 1, 45, '[表情包]', '2026-11-09 09:57:59', 1, 0, '2026-11-09 09:57:51', '2026-11-09 09:57:59');
+INSERT INTO `conversations` VALUES (3, 1, 45, '[表情包]', '2026-11-12 14:00:35', 0, 1, '2026-11-09 09:57:51', '2026-11-12 14:00:35');
+
+-- ----------------------------
+-- Table structure for galgame_endings
+-- ----------------------------
+DROP TABLE IF EXISTS `galgame_endings`;
+CREATE TABLE `galgame_endings`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
+  `user_id` bigint UNSIGNED NOT NULL COMMENT '达成结局的用户 users.id',
+  `ending_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '结局 id：good / normal / hidden',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '首次达成时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_galgame_user_ending`(`user_id` ASC, `ending_id` ASC) USING BTREE COMMENT '同用户同结局只记一次',
+  INDEX `idx_galgame_ending_id`(`ending_id` ASC) USING BTREE COMMENT '按结局聚合统计'
+) ENGINE = InnoDB AUTO_INCREMENT = 14 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'Galgame 结局收集记录' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of galgame_endings
+-- ----------------------------
+INSERT INTO `galgame_endings` VALUES (1, 1, 'good', '2026-11-12 14:13:33');
+INSERT INTO `galgame_endings` VALUES (3, 1, 'normal', '2026-11-12 14:32:40');
+INSERT INTO `galgame_endings` VALUES (5, 1, 'hidden', '2026-11-12 14:35:47');
+
+-- ----------------------------
+-- Table structure for galgame_saves
+-- ----------------------------
+DROP TABLE IF EXISTS `galgame_saves`;
+CREATE TABLE `galgame_saves`  (
+  `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键，自增',
+  `user_id` bigint UNSIGNED NOT NULL COMMENT '存档所属用户 users.id',
+  `node_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '当前停留的剧情节点 id',
+  `history` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '已读节点 id 数组（JSON），用于回顾',
+  `flags` mediumtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '好感度 / 已选分支等状态（JSON）',
+  `ending` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '已打出的结局 id，未通关为 NULL',
+  `play_seconds` int UNSIGNED NOT NULL DEFAULT 0 COMMENT '累计游玩秒数',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '首次开始时间',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后保存时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_galgame_user`(`user_id` ASC) USING BTREE COMMENT '一人一档，覆盖式保存',
+  INDEX `idx_galgame_ending`(`ending` ASC) USING BTREE COMMENT '结局统计用'
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'Galgame 存档（雨夜图书馆）' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Records of galgame_saves
+-- ----------------------------
+INSERT INTO `galgame_saves` VALUES (12, 1, 'story_end', '[\"start\",\"start_2\",\"met\",\"met_2\",\"first_choice\",\"sit_near\",\"show_book\",\"second_choice\",\"answer_name\",\"answer_name_2\",\"bridge\",\"bridge_2\",\"third_choice\",\"story_end\"]', '{\"favor\":4,\"sit\":\"near\",\"askedName\":true}', NULL, 109, '2026-11-12 15:08:12', '2026-11-12 15:08:11');
 
 -- ----------------------------
 -- Table structure for images
@@ -160,7 +205,7 @@ CREATE TABLE `messages`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_msg_conv`(`conversation_id` ASC, `id` ASC) USING BTREE COMMENT '按会话取历史消息',
   INDEX `idx_msg_sender`(`sender_id` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 19 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信消息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '私信消息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of messages
@@ -182,7 +227,8 @@ INSERT INTO `messages` VALUES (14, 1, 1, '😀', 'text', 0, 0, '2026-11-09 09:51
 INSERT INTO `messages` VALUES (15, 2, 1, '😊', 'text', 0, 0, '2026-11-09 09:54:32');
 INSERT INTO `messages` VALUES (16, 2, 1, '数字', 'text', 0, 0, '2026-11-09 09:55:07');
 INSERT INTO `messages` VALUES (17, 2, 1, '1', 'text', 0, 0, '2026-11-09 09:55:36');
-INSERT INTO `messages` VALUES (18, 3, 45, '/api/images/13', 'sticker', 0, 0, '2026-11-09 09:57:59');
+INSERT INTO `messages` VALUES (18, 3, 45, '/api/images/13', 'sticker', 1, 0, '2026-11-09 09:57:59');
+INSERT INTO `messages` VALUES (19, 3, 1, '/api/images/11', 'sticker', 0, 0, '2026-11-12 14:00:35');
 
 -- ----------------------------
 -- Table structure for post_likes
@@ -278,7 +324,7 @@ CREATE TABLE `posts`  (
   UNIQUE INDEX `uk_posts_slug`(`slug` ASC) USING BTREE COMMENT 'slug 唯一，可直接当 URL',
   INDEX `idx_posts_list`(`status` ASC, `published_at` ASC) USING BTREE COMMENT '首页按状态+发布时间倒序',
   INDEX `idx_posts_category`(`category_id` ASC) USING BTREE COMMENT '按分类筛选'
-) ENGINE = InnoDB AUTO_INCREMENT = 33 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 37 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of posts
@@ -353,7 +399,7 @@ CREATE TABLE `tags`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_tags_name`(`name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 77 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章标签表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 93 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '文章标签表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of tags
@@ -390,7 +436,7 @@ CREATE TABLE `users`  (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_users_username`(`username` ASC) USING BTREE COMMENT '用户名唯一'
-) ENGINE = InnoDB AUTO_INCREMENT = 46 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表（单作者博客，只放站长账号）' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 58 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户表（单作者博客，只放站长账号）' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of users

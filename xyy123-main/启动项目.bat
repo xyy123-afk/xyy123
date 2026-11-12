@@ -5,7 +5,13 @@ title 枫林小筑 一键启动
 setlocal
 set "FRONTEND_DIR=%~dp0"
 set "BACKEND_DIR=%~dp0..\springBootTest-main"
-set "LOCAL_IP=192.168.68.72"
+:: 自动取本机内网 IP（不再写死，换电脑/换网也能用）
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
+  for /f "tokens=1" %%b in ("%%a") do (
+    if not defined LOCAL_IP set "LOCAL_IP=%%b"
+  )
+)
+if not defined LOCAL_IP set "LOCAL_IP=localhost"
 :: 兼容布局：后端若与前端同在「新建文件夹」等同一目录，回退到同级查找
 if not exist "%BACKEND_DIR%\pom.xml" set "BACKEND_DIR=%~dp0springBootTest-main"
 set "MYSQL_EXE=C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"
